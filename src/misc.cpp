@@ -22,23 +22,22 @@
 #include <limits>
 #include <algorithm>
 #include "parameter_server.h"
-#include <cv.h>
+
 #include "scoped_timer.h"
 #include "header.h"
 
-#include "g2o/types/slam3d/se3quat.h"
-#include "g2o/types/slam3d/vertex_se3.h"
+#include <g2o/types/slam3d/se3quat.h>
+#include <g2o/types/slam3d/vertex_se3.h>
 
+#include <pcl/conversions.h>
 #include <pcl_ros/transforms.h>
-#include "pcl/common/io.h"
-#include "pcl/common/distances.h"
+#include <pcl/common/io.h>
+#include <pcl/common/distances.h>
 
-#if CV_MAJOR_VERSION > 2 || CV_MINOR_VERSION >= 4
-#include "opencv2/core/core.hpp"
-#include "opencv2/features2d/features2d.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/nonfree/nonfree.hpp"
-#endif
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/features2d/features2d.hpp>
+
 #include "aorb.h"
 
 #include <omp.h>
@@ -47,12 +46,15 @@
 
 //For the observability test
 #include <boost/math/distributions/chi_squared.hpp>
-#include <numeric>
 
 #include "feature_adjuster.h"
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 
+#include <math.h>
+#define SQRT_2_PI 2.5066283
+#define SQRT_2 1.41421
+#define LOG_SQRT_2_PI = 0.9189385332
 
 static void getCameraIntrinsics(float& fx, float& fy, float& cx, float& cy, const sensor_msgs::CameraInfo& cam_info) 
 {
@@ -791,17 +793,6 @@ float getMinDepthInNeighborhood(const cv::Mat& depth, cv::Point2f center, float 
     return static_cast<float>(minZ);
 }
 
-
-//#include "parameter_server.h" //For pointcloud definitions
-#include <pcl/ros/conversions.h>
-//#include <pcl_ros/transforms.h>
-
-//#include <Eigen/Core>
-#include <math.h>
-#define SQRT_2_PI 2.5066283
-#define SQRT_2 1.41421
-#define LOG_SQRT_2_PI = 0.9189385332
-
 inline int round(float d)
 {
   return static_cast<int>(floor(d + 0.5));
@@ -1148,7 +1139,8 @@ bool observation_criterion_met(unsigned int inliers, unsigned int outliers, unsi
   return both_criteria_met;
 }
 
-void getColor(const point_type& p, unsigned char& r, unsigned char& g, unsigned char& b){
+void getColor(const point_type& p, unsigned char& r, unsigned char& g, unsigned char& b)
+{
 #ifndef RGB_IS_4TH_DIM
     b = *(  (unsigned char*)&(p.rgb));
     g = *(1+(unsigned char*)&(p.rgb));
@@ -1160,18 +1152,21 @@ void getColor(const point_type& p, unsigned char& r, unsigned char& g, unsigned 
 #endif
 }
 
-///Overlay the monochrom edges and depth jumps
+// Overlay the monochrom edges and depth jumps
 void overlay_edges(cv::Mat visual, cv::Mat depth, cv::Mat& visual_edges, cv::Mat& depth_edges)
 {
   if(visual.type() != CV_8UC1){
-    visual_edges = cv::Mat( visual.rows, visual.cols, CV_8UC1); 
+    visual_edges = cv::Mat( visual.rows, visual.cols, CV_8UC1);
+#if CV_MAJOR_VERSION > 2
+    cv::cvtColor(visual, visual_edges, cv::COLOR_RGB2GRAY);
+#else
     cv::cvtColor(visual, visual_edges, CV_RGB2GRAY);
-  }
-  else 
-  {
+#endif
+  } else {
     visual_edges = visual;
   }
-  cv::blur( visual_edges, visual_edges, cv::Size(3,3) );
+
+  cv::blur(visual_edges, visual_edges, cv::Size(3,3));
   cv::Canny(visual_edges, visual_edges, 25, 300);
   cv::Canny(depth, depth_edges, 10, 300);
 }

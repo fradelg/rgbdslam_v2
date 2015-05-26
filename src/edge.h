@@ -19,7 +19,7 @@
 
 #include <set>
 #include <iostream>
-#include "g2o/types/slam3d/se3quat.h"
+#include <g2o/types/slam3d/se3quat.h>
 #include <Eigen/Core>
 
 struct LoadedEdge3D

@@ -40,18 +40,23 @@
  //
  //M*/
 
-#include "feature_adjuster.h"
-//#include "opencv2/features2d/precomp.hpp"
-#include "opencv2/features2d/features2d.hpp"
-#include "opencv2/nonfree/features2d.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "aorb.h"
-#include <cassert>
-#include <iostream>
 #include <algorithm> //for min
-//#include <ros/ros.h>
-using namespace cv;
+#include <iostream>
 
+#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
+#if CV_MAJOR_VERSION > 2
+#include <opencv2/xfeatures2d.hpp>
+#else
+#include <opencv2/nonfree/features2d.hpp>
+#endif
+
+#include "aorb.h"
+#include "feature_adjuster.h"
+
+
+using namespace cv;
 
 DetectorAdjuster::DetectorAdjuster(const char* detector_name, double initial_thresh, double min_thresh, double max_thresh, double increase_factor, double decrease_factor ) :
     thresh_(initial_thresh), 
@@ -72,24 +77,29 @@ void DetectorAdjuster::detectImpl(const Mat& image, std::vector<KeyPoint>& keypo
 {
     Ptr<FeatureDetector> detector; 
     if(strcmp(detector_name_, "SURF") == 0){
-      //detector->set("hessianThreshold", thresh_);//Not threadsafe (parallelized grid)
+#if CV_MAJOR_VERSION > 2
+      detector = cv::xfeatures2d::SurfFeatureDetector::create(thresh_);
+#else
       detector = new SurfFeatureDetector(thresh_);
-    }
-    else if(strcmp(detector_name_, "SIFT") == 0){
-      //detector->set("contrastThreshold", thresh_);
+#endif
+    } else if(strcmp(detector_name_, "SIFT") == 0){
+#if CV_MAJOR_VERSION > 2
+      detector = cv::xfeatures2d::SiftFeatureDetector::create(0 /*max_features*/, 3 /*default lvls/octave*/, thresh_);
+#else
       detector = new SiftFeatureDetector(0 /*max_features*/, 3 /*default lvls/octave*/, thresh_);
-    }
-    else if(strcmp(detector_name_, "FAST") == 0){
-      //detector->set("threshold", static_cast<int>(thresh_));
+#endif
+    } else if(strcmp(detector_name_, "FAST") == 0){
+#if CV_MAJOR_VERSION > 2
+      detector = FastFeatureDetector::create(thresh_);
+#else
       detector = new FastFeatureDetector(thresh_);
-    }
-    else if(strcmp(detector_name_, "AORB") == 0){
+#endif
+    } else if(strcmp(detector_name_, "AORB") == 0){
       //Default params except last
       detector = new AorbFeatureDetector(10000, 1.2, 8, 15, 0, 2, 0, 31, static_cast<int>(thresh_));
       //detector->set("fastThreshold", static_cast<int>(thresh_));//Not threadsafe (parallelized grid)
-    }
-    else {
-      FeatureDetector::create(detector_name_);
+    } else {
+//      FeatureDetector::create(detector_name_);
       std::cerr << "Unknown Descriptor, not setting threshold";
     }
     //ROS_INFO("Calling Detect with threshold %f", thresh_);
@@ -118,8 +128,7 @@ void DetectorAdjuster::tooMany(int, int)
             thresh_ = max_thresh_;
 }
 
-//return whether or not the threshhold is beyond
-//a useful point
+//return whether or not the threshhold is beyond a useful point
 bool DetectorAdjuster::good() const
 {
     return (thresh_ > min_thresh_) && (thresh_ < max_thresh_);
@@ -232,7 +241,11 @@ struct ResponseComparator
     }
 };
 
+#if CV_MAJOR_VERSION > 2
+void keepStrongest( int N,std::vector<KeyPoint>& keypoints )
+#else
 void keepStrongest( int N, vector<KeyPoint>& keypoints )
+#endif
 {
     if( (int)keypoints.size() > N )
     {

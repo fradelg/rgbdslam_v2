@@ -13,21 +13,20 @@
  * You should have received a copy of the GNU General Public License
  * along with RGBDSLAM.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <cv.h>
-#if CV_MAJOR_VERSION > 2 || CV_MINOR_VERSION >= 4
-#include "opencv2/core/core.hpp"
-#include "opencv2/features2d/features2d.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/nonfree/nonfree.hpp"
-#endif
-#include "aorb.h"
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/features2d/features2d.hpp>
+
+#if CV_MAJOR_VERSION > 2
+#include <opencv2/xfeatures2d.hpp>
+#else
+#include <opencv2/nonfree/nonfree.hpp>
+#endif
+
+#include "aorb.h"
 #include "feature_adjuster.h"
 #include "parameter_server.h"
 #include "ros/ros.h"
-//For tolower and transform
-#include <string>
-#include <algorithm>
 
 using namespace cv;
 
@@ -100,42 +99,61 @@ FeatureDetector* createDetector(const std::string& detectorName){
   else return detAdj;
 }
 
-DescriptorExtractor* createDescriptorExtractor(const std::string& descriptorType) 
+Ptr<DescriptorExtractor> createDescriptorExtractor(const std::string& descriptorType)
 {
-    DescriptorExtractor* extractor = 0;
+    Ptr<DescriptorExtractor> extractor;
     if(descriptorType == "SIFT") {
-        extractor = new SiftDescriptorExtractor();/*( double magnification=SIFT::DescriptorParams::GET_DEFAULT_MAGNIFICATION(), bool isNormalize=true, bool recalculateAngles=true, int nOctaves=SIFT::CommonParams::DEFAULT_NOCTAVES, int nOctaveLayers=SIFT::CommonParams::DEFAULT_NOCTAVE_LAYERS, int firstOctave=SIFT::CommonParams::DEFAULT_FIRST_OCTAVE, int angleMode=SIFT::CommonParams::FIRST_ANGLE )*/
-    }
-    else if(descriptorType == "BRIEF") {
+#if CV_MAJOR_VERSION > 2
+        extractor = cv::xfeatures2d::SiftDescriptorExtractor::create();
+#else
+        extractor = new SiftDescriptorExtractor();
+#endif
+    } else if(descriptorType == "BRIEF") {
+#if CV_MAJOR_VERSION > 2
+        extractor = cv::xfeatures2d::BriefDescriptorExtractor::create();
+#else
         extractor = new BriefDescriptorExtractor();
-    }
-    else if(descriptorType == "BRISK") {
+#endif
+    } else if(descriptorType == "BRISK") {
+#if CV_MAJOR_VERSION > 2
+        extractor = cv::BRISK::create();
+#else
         extractor = new cv::BRISK();/*brisk default: (int thresh=30, int octaves=3, float patternScale=1.0f)*/
-    }
-    else if(descriptorType == "FREAK") {
+#endif
+    } else if(descriptorType == "FREAK") {
+#if CV_MAJOR_VERSION > 2
+        extractor = cv::xfeatures2d::FREAK::create();
+#else
         extractor = new cv::FREAK();
-    }
-    else if(descriptorType == "SURF") {
+#endif
+    } else if(descriptorType == "SURF") {
+#if CV_MAJOR_VERSION > 2
+        extractor = cv::xfeatures2d::SurfDescriptorExtractor::create();
+#else
         extractor = new SurfDescriptorExtractor();/*( int nOctaves=4, int nOctaveLayers=2, bool extended=false )*/
-    }
-    else if(descriptorType == "SURF128") {
+#endif
+    } else if(descriptorType == "SURF128") {
+#if CV_MAJOR_VERSION > 2
+        extractor = cv::xfeatures2d::SurfDescriptorExtractor::create();
+        ((cv::xfeatures2d::SurfDescriptorExtractor *) extractor.get())->setExtended(true);
+#else
         extractor = new SurfDescriptorExtractor();/*( int nOctaves=4, int nOctaveLayers=2, bool extended=false )*/
         extractor->set("extended", 1);
-    }
-#if CV_MAJOR_VERSION > 2 || CV_MINOR_VERSION >= 3
-    else if(descriptorType == "ORB") {
-        extractor = new OrbDescriptorExtractor();
-    }
 #endif
-    else if(descriptorType == "SIFTGPU") {
+    } else if(descriptorType == "ORB") {
+#if CV_MAJOR_VERSION > 2
+        extractor = cv::ORB::create();
+#else
+        extractor = new OrbDescriptorExtractor();
+#endif
+    } else if(descriptorType == "SIFTGPU") {
       ROS_DEBUG("%s is to be used as extractor, creating SURF descriptor extractor as fallback.", descriptorType.c_str());
-      extractor = new SurfDescriptorExtractor();/*( int nOctaves=4, int nOctaveLayers=2, bool extended=false )*/
-    }
-    else {
+      extractor = createDescriptorExtractor("SURF");
+    } else {
       ROS_ERROR("No valid descriptor-matcher-type given: %s. Using SURF", descriptorType.c_str());
       extractor = createDescriptorExtractor("SURF");
     }
-    assert(extractor != 0 && "No extractor could be created");
+    assert(!extractor.empty() && "No extractor could be created");
     return extractor;
 }
 

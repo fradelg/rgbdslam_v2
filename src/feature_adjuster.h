@@ -1,9 +1,46 @@
 #ifndef FEATUREADJUSTER_H
 #define FEATUREADJUSTER_H
+
 #include <opencv2/features2d/features2d.hpp>
 
-/** \brief an detector adjuster optimized for image sequences (video).
- * Use this Adjuster with the DynamicAdaptedFeatureDetector. 
+#if CV_MAJOR_VERSION > 2
+namespace cv {
+
+/** \brief A feature detector parameter adjuster, this is used by the DynamicAdaptedFeatureDetector
+ *  and is a wrapper for FeatureDetector that allow them to be adjusted after a detection
+ */
+class CV_EXPORTS AdjusterAdapter: public FeatureDetector
+{
+public:
+    /** pure virtual interface
+     */
+    virtual ~AdjusterAdapter() {}
+    /** too few features were detected so, adjust the detector params accordingly
+     * \param min the minimum number of desired features
+     * \param n_detected the number previously detected
+     */
+    virtual void tooFew(int min, int n_detected) = 0;
+    /** too many features were detected so, adjust the detector params accordingly
+     * \param max the maximum number of desired features
+     * \param n_detected the number previously detected
+     */
+    virtual void tooMany(int max, int n_detected) = 0;
+    /** are params maxed out or still valid?
+     * \return false if the parameters can't be adjusted any more
+     */
+    virtual bool good() const = 0;
+
+    virtual Ptr<AdjusterAdapter> clone() const = 0;
+
+    static Ptr<AdjusterAdapter> create( const std::string& detectorType );
+};
+
+}
+
+#endif
+
+/** \brief A detector adjuster optimized for image sequences (video)
+ * Use this Adjuster with the DynamicAdaptedFeatureDetector
  * It lets you set the increase/decrease factor for faster adaptation.
  * It works for SURF, SIFT, FAST and the adjustable ORB variant "AORB" 
  * which exposes its FAST threshold.
@@ -117,6 +154,5 @@ protected:
     int gridCols;
     int edgeThreshold; 
 };
-
 
 #endif

@@ -18,35 +18,36 @@
  * data via ROS, to the screen (visualization) or to disk. They are declared in graph_manager.h */
 
 #include <sys/time.h>
-#include "scoped_timer.h"
-#include "graph_manager.h"
-#include "misc.h"
-#include "pcl_ros/transforms.h"
-#include "pcl/io/pcd_io.h"
-//#include <sensor_msgs/PointCloud2.h>
-#include <opencv2/features2d/features2d.hpp>
-#include <qtconcurrentrun.h>
+
 #include <QFile>
-#include <utility>
-#include <fstream>
 #include <boost/foreach.hpp>
 #include <rosbag/bag.h>
 
-#include "g2o/types/slam3d/se3quat.h"
+#include <g2o/types/slam3d/se3quat.h>
 //#include "g2o/types/slam3d/edge_se3_quat.h"
-#include "g2o/types/slam3d/edge_se3.h"
-#include "g2o/core/optimizable_graph.h"
+#include <g2o/types/slam3d/edge_se3.h>
+#include <g2o/core/optimizable_graph.h>
 
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
+#include <pcl_ros/transforms.h>
+#include <pcl/io/pcd_io.h>
+//#include <sensor_msgs/PointCloud2.h>
+
+#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
+#include "scoped_timer.h"
+#include "graph_manager.h"
+#include "misc.h"
 
 // If QT Concurrent is available, run the saving in a seperate thread
-void GraphManager::sendAllClouds(bool threaded){
+void GraphManager::sendAllClouds(bool threaded)
+{
     if (ParameterServer::instance()->get<bool>("concurrent_io") && threaded) {
         QFuture<void> f1 = QtConcurrent::run(this, &GraphManager::sendAllCloudsImpl);
         //f1.waitForFinished();
-    }
-    else {// Otherwise just call it without threading
+    } else {// Otherwise just call it without threading
         sendAllCloudsImpl();
     }
 }

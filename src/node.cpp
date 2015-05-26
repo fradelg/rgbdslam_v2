@@ -19,25 +19,17 @@
 #include "features.h"
 #include "transformation_estimation_euclidean.h"
 #include "transformation_estimation.h"
-#include <cmath>
 #include "scoped_timer.h"
 #include <Eigen/Geometry>
-//#include "pcl/ros/conversions.h"
 #include <pcl/common/transformation_from_correspondences.h>
-//#include <opencv2/highgui/highgui.hpp>
-//#include <qtconcurrentrun.h>
-//#include <QtConcurrentMap> 
+#include <opencv2/imgproc/imgproc.hpp>
 
 #ifdef USE_SIFT_GPU
 #include "sift_gpu_wrapper.h"
 #endif
 
-//#include <math.h>
 #include <fstream>
 
-//#ifdef USE_ICP_CODE
-//#include "../external/gicp/transform.h"
-//#endif
 #ifdef USE_ICP_BIN
 #include "gicp-fallback.h"
 #endif
@@ -47,18 +39,15 @@
 #include "gicp/transform.h"
 #endif
 
-//#include <iostream>
+#ifdef USE_PCL_ICP
+#include "icp.h"
+#endif
+
 #include "misc.h"
 #include "misc2.h"
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/impl/voxel_grid.hpp>
-#include <opencv/highgui.h>
-#ifdef USE_PCL_ICP
-#include "icp.h"
-#endif
-#include <string>
-#include <iostream>
-#include <cmath>
+
 QMutex Node::gicp_mutex;
 QMutex Node::siftgpu_mutex;
 
@@ -137,7 +126,11 @@ Node::Node(const cv::Mat& visual,
 
   cv::Mat gray_img; 
   if(visual.type() == CV_8UC3){
+#if CV_MAJOR_VERSION > 2
+    cv::cvtColor(visual, gray_img, CV_RGB2GRAY);
+#else
     cvtColor(visual, gray_img, CV_RGB2GRAY);
+#endif
   } else {
     gray_img = visual;
   }

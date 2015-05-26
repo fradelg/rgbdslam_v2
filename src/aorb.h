@@ -1,6 +1,6 @@
 #ifndef RGBDSLAM_AORB
 #define RGBDSLAM_AORB
-/*M///////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
  //
  //  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
  //
@@ -40,9 +40,11 @@
  // or tort (including negligence or otherwise) arising in any way out of
  // the use of this software, even if advised of the possibility of such damage.
  //
- //M*/
+ //
 
-#include "opencv2/core/core.hpp"
+#include <opencv2/core/core.hpp>
+#include <opencv2/features2d/features2d.hpp>
+
 /*!
  Adjustable ORB implementation. Modified from original ORB by Felix Endres
 */
@@ -62,18 +64,16 @@ public:
     int descriptorType() const;
 
     // Compute the AORB features and descriptors on an image
-    void operator()(InputArray image, InputArray mask, vector<KeyPoint>& keypoints) const;
+    void operator()(InputArray image, InputArray mask, std::vector<KeyPoint>& keypoints) const;
 
     // Compute the AORB features and descriptors on an image
-    void operator()( InputArray image, InputArray mask, vector<KeyPoint>& keypoints,
+    void operator()( InputArray image, InputArray mask, std::vector<KeyPoint>& keypoints,
                      OutputArray descriptors, bool useProvidedKeypoints=false ) const;
   
-    AlgorithmInfo* info() const;
-    
 protected:
 
-    void computeImpl( const Mat& image, vector<KeyPoint>& keypoints, Mat& descriptors ) const;
-    void detectImpl( const Mat& image, vector<KeyPoint>& keypoints, const Mat& mask=Mat() ) const;
+    void computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat& descriptors ) const;
+    void detectImpl( const Mat& image, std::vector<KeyPoint>& keypoints, const Mat& mask=Mat() ) const;
     
     CV_PROP_RW int nfeatures;
     CV_PROP_RW double scaleFactor;

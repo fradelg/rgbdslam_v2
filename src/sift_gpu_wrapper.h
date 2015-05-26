@@ -46,7 +46,14 @@ public:
 	 * \param  mask         a mask (see OpenCV)
 	 * \return a pointer to the descriptor values
 	 */
+#if CV_MAJOR_VERSION > 2
+    void detect(const cv::Mat& image,
+                std::vector<cv::KeyPoint>& keypoints,
+                std::vector<float>& descriptors,
+                const cv::Mat& mask = cv::Mat()) const;
+#else
 	void detect(const cv::Mat& image, cv::vector<cv::KeyPoint>& keypoints, std::vector<float>& descriptors, const cv::Mat& mask = cv::Mat()) const;
+#endif
 
 	/*!
 	 * Is used for matching two descriptors
