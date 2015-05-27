@@ -1213,7 +1213,7 @@ bool Node::getRelativeTransformationTo(const Node* earlier_node,
     }
 
     ROS_INFO("%s: %i good iterations (from %i), inlier pct %i, inlier cnt: %i, error (MHD): %.2f", nodesstring.c_str(), valid_iterations, ransac_iterations, (int)(matches.size() * 1.0 / initial_matches->size() * 100), (int)matches.size(), rmse);
-    // ROS_INFO("best overall: inlier: %i, error: %.2f",best_inlier_invalid, best_error_invalid*100);
+    // ROS_INFO("best overall: inlier: %i, error: %.2f", best_inlier_invalid, best_error_invalid*100);
 
     bool enough_absolute = matches.size() >= min_inlier_threshold;
     return enough_absolute;
@@ -1495,7 +1495,7 @@ void pairwiseObservationLikelihood(const Node* newer_node, const Node* older_nod
     mr.all_points = all_points;
 }
 
-///Compute the RootSIFT from SIFT according to Arandjelovic and Zisserman
+// Compute the RootSIFT from SIFT according to Arandjelovic and Zisserman
 void squareroot_descriptor_space(cv::Mat& descriptors)
 {
     // Compute sums for L1 Norm
@@ -1507,7 +1507,8 @@ void squareroot_descriptor_space(cv::Mat& descriptors)
             continue; //Do not normalize norm-zero vectors
         int offset = row * descriptors.cols;
         for (unsigned int col = 0; col < descriptors.cols; col++) {
-            descriptors.at<float>(offset + col) = sqrt(descriptors.at<float>(offset + col) / sums_vec.at<float>(row) /*L1-Normalize*/);
+            /* L1-Normalization of descriptors */
+            descriptors.at<float>(offset + col) = sqrt(descriptors.at<float>(offset + col) / sums_vec.at<float>(row));
         }
     }
 }
@@ -1518,7 +1519,7 @@ void Node::knnSearch(cv::Mat& query,
                      int knn,
                      const cv::flann::SearchParams& params) const
 {
-    this->getFlannIndex(); //make sure it is constructed (cannot use it directly b/c of constness
+    this->getFlannIndex(); //make sure it is constructed (cannot use it directly b/c of constness)
     flannIndex->knnSearch(query, indices, dists, knn, params);
 }
 

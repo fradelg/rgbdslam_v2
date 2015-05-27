@@ -58,13 +58,13 @@ StatefulFeatureDetector* adjustedGridWrapper(cv::Ptr<DetectorAdjuster> detadj)
 }
 
 //Use Grid or Dynamic or GridDynamic as prefix of FAST, SIFT, SURF or AORB
-FeatureDetector* createDetector(const std::string& detectorName){
+cv::Ptr<FeatureDetector> createDetector(const std::string& detectorName){
   //For anything but SIFTGPU
   DetectorAdjuster* detAdj = NULL;
 
   ROS_INFO_STREAM("Using " << detectorName << " keypoint detector.");
   if( detectorName == "SIFTGPU" ) {
-    return NULL;// Will not be used
+    return new DetectorAdjuster("SIFT", 0.04, 0.0001);
   } 
   else if(detectorName == "FAST") {
      detAdj = new DetectorAdjuster("FAST", 20);
@@ -98,7 +98,7 @@ FeatureDetector* createDetector(const std::string& detectorName){
     return adjusterWrapper(detAdj, min, max);
   }
 
-  return detAdj;
+  return cv::Ptr<FeatureDetector>(detAdj);
 }
 
 Ptr<DescriptorExtractor> createDescriptorExtractor(const std::string& descriptorType)

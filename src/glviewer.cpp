@@ -38,8 +38,6 @@
 #define GL_MULTISAMPLE  0x809D
 #endif
 
-const double PI= 3.14159265358979323846;
-
 template <typename PointType>
 inline bool validXYZ(const PointType& p, float max_depth){
       if(max_depth < p.z) return false;
@@ -115,7 +113,7 @@ GLViewer::GLViewer(QWidget *parent)
       width_(0),
       height_(0),
       stereo_shift_(0.1),
-      fov_(100.0/180.0*PI),
+      fov_(100.0/180.0*M_PI),
       rotation_stepping_(1.0),
       myparent(parent),
       button_pressed_(false),
@@ -434,12 +432,8 @@ void GLViewer::resizeGL(int width, int height)
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-//#ifdef QT_OPENGL_ES_1
-//    glOrthof(-0.5, +0.5, -0.5, +0.5, 1.0, 15.0);
-//#else
-//    glOrtho(-0.5, +0.5, -0.5, +0.5, 1.0, 15.0);
-//#endif
-    //gluPerspective(fov_, 1.38, 0.01, 1e9); //1.38 = tan(57/2°)/tan(43/2°) as kinect has viewing angles 57 and 43
+//  glOrtho(-0.5, +0.5, -0.5, +0.5, 1.0, 15.0);
+//  gluPerspective(fov_, 1.38, 0.01, 1e9); //1.38 = tan(57/2°)/tan(43/2°) as kinect has viewing angles 57 and 43
     float ratio = (float)width / (float) height;
     gluPerspective(fov_, ratio, 0.1, 1e4); 
     glMatrixMode(GL_MODELVIEW);
@@ -1212,13 +1206,13 @@ inline void GLViewer::clearAndUpdate(){
 void drawEllipsoid(float fA, float fB, float fC, const Eigen::Vector4f& p)
 {
   unsigned int uiStacks = 4, uiSlices = 4;
-	float tStep = (PI) / (float)uiSlices;
-	float sStep = (PI) / (float)uiStacks;
+    float tStep = (M_PI) / (float)uiSlices;
+    float sStep = (M_PI) / (float)uiStacks;
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	for(float t = -PI/2; t <= (PI/2)+.0001; t += tStep)
+    for(float t = -M_PI/2; t <= (M_PI/2)+.0001; t += tStep)
 	{
 		glBegin(GL_TRIANGLE_STRIP);
-		for(float s = -PI; s <= PI+.0001; s += sStep)
+        for(float s = -M_PI; s <= M_PI+.0001; s += sStep)
 		{
 			glVertex3f(p[0] + fA * cos(t) * cos(s), 
                  p[1] + fB * cos(t) * sin(s), 
@@ -1252,6 +1246,7 @@ void GLViewer::setRenderable(Renderable* r){
 }
 
 #else //ifndef DUMMYGLVIEWER (ARM Hardware)
+
 #include "glviewer.h"
 //Empty methods
 GLViewer::GLViewer(QWidget *parent) : QGLWidget(parent) { }
