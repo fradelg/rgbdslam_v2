@@ -91,12 +91,14 @@ FeatureDetector* createDetector(const std::string& detectorName){
   if(dynaWrap && gridWrap){
     return adjustedGridWrapper(detAdj);
   }
-  else if(dynaWrap){
+
+  if(dynaWrap){
     int min = params->get<int>("max_keypoints");
     int max = min * 1.5; //params->get<int>("max_keypoints");
     return adjusterWrapper(detAdj, min, max);
   }
-  else return detAdj;
+
+  return detAdj;
 }
 
 Ptr<DescriptorExtractor> createDescriptorExtractor(const std::string& descriptorType)
@@ -118,7 +120,7 @@ Ptr<DescriptorExtractor> createDescriptorExtractor(const std::string& descriptor
 #if CV_MAJOR_VERSION > 2
         extractor = cv::BRISK::create();
 #else
-        extractor = new cv::BRISK();/*brisk default: (int thresh=30, int octaves=3, float patternScale=1.0f)*/
+        extractor = new cv::BRISK();/*(int thresh=30, int octaves=3, float patternScale=1.0f)*/
 #endif
     } else if(descriptorType == "FREAK") {
 #if CV_MAJOR_VERSION > 2

@@ -17,8 +17,7 @@
 
 #ifndef OPENNI_LISTENER_H
 #define OPENNI_LISTENER_H
-#include "ros/ros.h"
-//#include <pcl_tf/transforms.h>
+
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
@@ -26,13 +25,14 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <nav_msgs/Odometry.h>
+#include <rosbag/bag.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
+
+#include <QImage>
+#include <QStringList>
+
 #include "graph_manager.h"
-#include <qtconcurrentrun.h>
-#include <QImage> //for cvMat2QImage not listet here but defined in cpp file
-#include <QStringList> 
-#include <rosbag/bag.h>
 
 //forward-declare to avoid including tf
 ///\cond

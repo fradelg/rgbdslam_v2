@@ -693,7 +693,7 @@ void GraphManager::visualizeFeatureFlow3D(unsigned int marker_id, bool draw_outl
         }
         visualization_msgs::Marker marker_lines;
 
-        marker_lines.header.frame_id = "/openni_rgb_optical_frame";
+        marker_lines.header.frame_id = "/camera_rgb_optical_frame";
         marker_lines.ns = "ransac_markers";
         marker_lines.header.stamp = ros::Time::now();
         marker_lines.action = visualization_msgs::Marker::ADD;
@@ -779,7 +779,7 @@ void GraphManager::visualizeGraphEdges() const {
     if (marker_pub_.getNumSubscribers() > 0){ //no visualization for nobody
         ROS_WARN("Sending RVIZ Marker");
         visualization_msgs::Marker edges_marker;
-        edges_marker.header.frame_id = "/openni_rgb_optical_frame"; //TODO: Should be a meaningfull fixed frame with known relative pose to the camera
+        edges_marker.header.frame_id = "/camera_rgb_optical_frame"; //TODO: Should be a meaningfull fixed frame with known relative pose to the camera
         edges_marker.header.stamp = ros::Time::now();
         edges_marker.ns = "camera_pose_graph"; // Set the namespace and id for this marker.  This serves to create a unique ID
         edges_marker.id = 0;    // Any marker sent with the same namespace and id will overwrite the old one
@@ -834,7 +834,7 @@ void GraphManager::visualizeGraphNodes() const {
 
     if (marker_pub_.getNumSubscribers() > 0){ //don't visualize, if nobody's looking
         visualization_msgs::Marker nodes_marker;
-        nodes_marker.header.frame_id = "/openni_rgb_optical_frame"; //TODO: Should be a meaningfull fixed frame with known relative pose to the camera
+        nodes_marker.header.frame_id = "/camera_rgb_optical_frame"; //TODO: Should be a meaningfull fixed frame with known relative pose to the camera
         nodes_marker.header.stamp = ros::Time::now();
         nodes_marker.ns = "camera_pose_graph"; // Set the namespace and id for this marker.  This serves to create a unique ID
         nodes_marker.id = 1;    // Any marker sent with the same namespace and id will overwrite the old one

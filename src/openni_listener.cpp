@@ -132,10 +132,8 @@ OpenNIListener::OpenNIListener(GraphManager* graph_mgr)
   setupSubscribers();
 }
 
-
-
-
-void OpenNIListener::setupSubscribers(){
+void OpenNIListener::setupSubscribers()
+{
   ParameterServer* ps = ParameterServer::instance();
   int q = ps->get<int>("subscriber_queue_size");
   ros::NodeHandle nh;
@@ -782,7 +780,6 @@ void OpenNIListener::noCloudCameraCallback(cv::Mat visual_img,
 }
 
 
-
 //Call function either regularly or as background thread
 void OpenNIListener::callProcessing(cv::Mat visual_img, Node* node_ptr)
 {
@@ -962,7 +959,7 @@ void OpenNIListener::retrieveTransformations(std_msgs::Header depth_header, Node
   }
   catch (tf::TransformException ex){
     ROS_WARN("%s",ex.what());
-    ROS_WARN("Using Standard kinect /openni_camera -> /openni_rgb_optical_frame as transformation (This message is throttled to 1 per 5 seconds)");
+    ROS_WARN("Using Standard kinect /openni_camera -> /camera_rgb_optical_frame as transformation (This message is throttled to 1 per 5 seconds)");
     //emulate the transformation from kinect openni_camera frame to openni_rgb_optical_frame
     base2points.setRotation(tf::createQuaternionFromRPY(-1.57,0,-1.57));
     base2points.setOrigin(tf::Point(0,-0.04,0));

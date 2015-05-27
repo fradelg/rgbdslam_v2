@@ -14,14 +14,11 @@
  * along with RGBDSLAM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <QApplication>
+#include "glviewer.h"
 #include "openni_listener.h"
 #include "qtros.h"
-#include <QApplication>
-#include <QObject>
 #include "qt_gui.h"
-#include "glviewer.h"
-#include <Eigen/Core>
-#include "parameter_server.h"
 #include "ros_service_ui.h"
 
 //TODO:
@@ -32,11 +29,12 @@
 //Multi-Camera-fusion
 
 class Renderable; //Fwd decl for signal renderableOctomap
+
 ///Connect Signals and Slots for the ui control
 void ui_connections(QObject* ui, GraphManager* graph_mgr, OpenNIListener* listener)
 {
   Qt::ConnectionType ctype = Qt::AutoConnection;
-  if (ParameterServer::instance()->get<bool>("concurrent_io")) 
+  if (ParameterServer::instance()->get<bool>("concurrent_io"))
     ctype = Qt::DirectConnection;
   QObject::connect(ui, SIGNAL(reset()), graph_mgr, SLOT(reset()), ctype);
   QObject::connect(ui, SIGNAL(optimizeGraph()), graph_mgr, SLOT(optimizeGraph()), ctype);
@@ -76,19 +74,19 @@ void gui_connections(Graphical_UI* gui, GraphManager* graph_mgr, OpenNIListener*
     QObject::connect(gui, SIGNAL(openBagFile(QString)), listener, SLOT(loadBagFileFromGUI(QString)));
     if (ParameterServer::instance()->get<bool>("use_glwidget") && gui->getGLViewer() != NULL) {
       GLViewer* glv = gui->getGLViewer();
-	    QObject::connect(graph_mgr, SIGNAL(setPointCloud(pointcloud_type *, QMatrix4x4)), glv, SLOT(addPointCloud(pointcloud_type *, QMatrix4x4)), Qt::BlockingQueuedConnection ); //Needs to block, otherwise the opengl list compilation makes the app unresponsive. This effectively throttles the processing rate though
+            QObject::connect(graph_mgr, SIGNAL(setPointCloud(pointcloud_type *, QMatrix4x4)), glv, SLOT(addPointCloud(pointcloud_type *, QMatrix4x4)), Qt::BlockingQueuedConnection ); //Needs to block, otherwise the opengl list compilation makes the app unresponsive. This effectively throttles the processing rate though
       typedef const std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f> >* cnst_ft_vectors;
-	    QObject::connect(graph_mgr, SIGNAL(setFeatures(const std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f> >*)), glv, SLOT(addFeatures(const std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f> >*))); //, Qt::DirectConnection);
-	    QObject::connect(graph_mgr, SIGNAL(setGraphEdges(const QList<QPair<int, int> >*)), glv, SLOT(setEdges(const QList<QPair<int, int> >*)));
-	    QObject::connect(graph_mgr, SIGNAL(updateTransforms(QList<QMatrix4x4>*)), glv, SLOT(updateTransforms(QList<QMatrix4x4>*)));
+            QObject::connect(graph_mgr, SIGNAL(setFeatures(const std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f> >*)), glv, SLOT(addFeatures(const std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f> >*))); //, Qt::DirectConnection);
+            QObject::connect(graph_mgr, SIGNAL(setGraphEdges(const QList<QPair<int, int> >*)), glv, SLOT(setEdges(const QList<QPair<int, int> >*)));
+            QObject::connect(graph_mgr, SIGNAL(updateTransforms(QList<QMatrix4x4>*)), glv, SLOT(updateTransforms(QList<QMatrix4x4>*)));
       QObject::connect(graph_mgr, SIGNAL(deleteLastNode()), glv, SLOT(deleteLastNode()));
-	    QObject::connect(graph_mgr, SIGNAL(resetGLViewer()),  glv, SLOT(reset()));
-	    QObject::connect(graph_mgr, SIGNAL(renderableOctomap(Renderable*)),  glv, SLOT(setRenderable(Renderable*)));
+            QObject::connect(graph_mgr, SIGNAL(resetGLViewer()),  glv, SLOT(reset()));
+            QObject::connect(graph_mgr, SIGNAL(renderableOctomap(Renderable*)),  glv, SLOT(setRenderable(Renderable*)));
       //QObject::connect(glv, SIGNAL(clickedPosition(float,float,float)), graph_mgr, SLOT(filterNodesByPosition(float,float,float)));
       if(!ParameterServer::instance()->get<bool>("store_pointclouds")) {
-          QObject::connect(glv, SIGNAL(cloudRendered(pointcloud_type *)), graph_mgr, SLOT(clearPointCloud(pointcloud_type const *))); // 
+          QObject::connect(glv, SIGNAL(cloudRendered(pointcloud_type *)), graph_mgr, SLOT(clearPointCloud(pointcloud_type const *))); //
       } else if(ParameterServer::instance()->get<double>("voxelfilter_size") > 0.0) {
-          QObject::connect(glv, SIGNAL(cloudRendered(pointcloud_type *)), graph_mgr, SLOT(reducePointCloud(pointcloud_type const *))); // 
+          QObject::connect(glv, SIGNAL(cloudRendered(pointcloud_type *)), graph_mgr, SLOT(reducePointCloud(pointcloud_type const *))); //
       }
     }
     QObject::connect(listener, SIGNAL(setGUIInfo(QString)), gui, SLOT(setInfo(QString)));
@@ -115,13 +113,13 @@ int main(int argc, char** argv)
   QtROS qtRos(argc, argv, "rgbdslam"); //ros node name & namespace
 
   //Depending an use_gui on the Parameter Server, a gui- or a headless application is used
-  QApplication app(argc, argv, ParameterServer::instance()->get<bool>("use_gui")); 
+  QApplication app(argc, argv, ParameterServer::instance()->get<bool>("use_gui"));
 
   GraphManager graph_mgr;
-  //Instantiate the kinect image listener
+  //Instantiate the Kinect image listener
   OpenNIListener listener(&graph_mgr);
   std::string bagfile_name = ParameterServer::instance()->get<std::string>("bagfile_name");
-  if(!bagfile_name.empty()) 
+  if(!bagfile_name.empty())
   {
     QObject::connect(&listener, SIGNAL(bagFinished()), &app, SLOT(quit()));
     QObject::connect(&listener, SIGNAL(bagFinished()), &qtRos, SLOT(quitNow()));
@@ -130,7 +128,7 @@ int main(int argc, char** argv)
   }
 
   Graphical_UI* gui = NULL;
-	if (app.type() == QApplication::GuiClient){
+  if (app.type() == QApplication::GuiClient) {
       gui = new Graphical_UI();
       gui->show();
       gui_connections(gui, &graph_mgr, &listener);
@@ -148,8 +146,8 @@ int main(int argc, char** argv)
 
   qtRos.start();// Run main loop.
   app.exec();
-  //if(ros::ok()) ros::shutdown();//If not yet done through the qt connection
-  //ros::waitForShutdown(); //not sure if necessary. 
+  if (ros::ok()) ros::shutdown();//If not yet done through the qt connection
+  ros::waitForShutdown(); //not sure if necessary.
 }
 
 

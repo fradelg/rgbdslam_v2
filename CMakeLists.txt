@@ -126,7 +126,7 @@ IF (${USE_GICP})
 	    WORKING_DIRECTORY ${gicp_build_path}
 	    RESULT_VARIABLE gicp_return
     )
-    MESSAGE("\n------------------------------------------------------------------\n")
+  MESSAGE("\n------------------------------------------------------------------\n")
 	
 	#on error
 	IF (NOT ${gicp_return} EQUAL 0)
@@ -167,7 +167,8 @@ QT4_WRAP_CPP(QT_MOC_HPP ${QT_MOC})
 # Sources to Compile
 ##############################################################################
 SET(SOURCES
-  src/gicp-fallback.cpp src/main.cpp
+  src/main.cpp
+  src/gicp-fallback.cpp
   src/qtros.cpp
   src/openni_listener.cpp
   src/qt_gui.cpp
@@ -249,6 +250,19 @@ IF (${USE_GICP})
     external/gicp/transform.cpp
   )
 ENDIF (${USE_GICP})
+
+# Mark executables and/or libraries for installation
+install(TARGETS rgbdslam
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+# install launch files in their own subdirectory
+install(DIRECTORY
+  launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+)
 
 ###############################################################################
 ## Bag Viewer

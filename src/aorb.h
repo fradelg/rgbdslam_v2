@@ -49,31 +49,55 @@
  Adjustable ORB implementation. Modified from original ORB by Felix Endres
 */
 namespace cv {
+
 class AORB : public Feature2D
 {
 public:
     // the size of the signature in bytes
     enum { kBytes = 32, HARRIS_SCORE=0, FAST_SCORE=1 };
 
+    CV_WRAP virtual void setMaxFeatures(int maxFeatures) = 0;
+    CV_WRAP virtual int getMaxFeatures() const = 0;
+
+    CV_WRAP virtual void setScaleFactor(double scaleFactor) = 0;
+    CV_WRAP virtual double getScaleFactor() const = 0;
+
+    CV_WRAP virtual void setNLevels(int nlevels) = 0;
+    CV_WRAP virtual int getNLevels() const = 0;
+
+    CV_WRAP virtual void setEdgeThreshold(int edgeThreshold) = 0;
+    CV_WRAP virtual int getEdgeThreshold() const = 0;
+
+    CV_WRAP virtual void setFirstLevel(int firstLevel) = 0;
+    CV_WRAP virtual int getFirstLevel() const = 0;
+
+    CV_WRAP virtual void setWTA_K(int wta_k) = 0;
+    CV_WRAP virtual int getWTA_K() const = 0;
+
+    CV_WRAP virtual void setScoreType(int scoreType) = 0;
+    CV_WRAP virtual int getScoreType() const = 0;
+
+    CV_WRAP virtual void setPatchSize(int patchSize) = 0;
+    CV_WRAP virtual int getPatchSize() const = 0;
+
+    CV_WRAP virtual void setFastThreshold(int fastThreshold) = 0;
+    CV_WRAP virtual int getFastThreshold() const = 0;
+
+#if CV_MAJOR_VERSION > 2
+    CV_WRAP static Ptr<AORB> create(int nfeatures=500, float scaleFactor=1.2f, int nlevels=8, int edgeThreshold=31,
+        int firstLevel=0, int WTA_K=2, int scoreType=ORB::HARRIS_SCORE, int patchSize=31, int fastThreshold=20);
+#else
     explicit AORB(int nfeatures = 500, float scaleFactor = 1.2f, int nlevels = 8, int edgeThreshold = 31,
                  int firstLevel = 0, int WTA_K=2, int scoreType=0, int patchSize=31, int fastThreshold = 20 );
 
-    // returns the descriptor size in bytes
-    int descriptorSize() const;
-    // returns the descriptor type
-    int descriptorType() const;
-
     // Compute the AORB features and descriptors on an image
     void operator()(InputArray image, InputArray mask, std::vector<KeyPoint>& keypoints) const;
+    void operator()(InputArray image, InputArray mask, std::vector<KeyPoint>& keypoints,
+                     OutputArray descriptors, bool useProvidedKeypoints=false) const;
 
-    // Compute the AORB features and descriptors on an image
-    void operator()( InputArray image, InputArray mask, std::vector<KeyPoint>& keypoints,
-                     OutputArray descriptors, bool useProvidedKeypoints=false ) const;
-  
 protected:
-
-    void computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat& descriptors ) const;
     void detectImpl( const Mat& image, std::vector<KeyPoint>& keypoints, const Mat& mask=Mat() ) const;
+    void computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat& descriptors ) const;
     
     CV_PROP_RW int nfeatures;
     CV_PROP_RW double scaleFactor;
@@ -84,11 +108,11 @@ protected:
     CV_PROP_RW int WTA_K;
     CV_PROP_RW int scoreType;
     CV_PROP_RW int patchSize;
+#endif
 };
     
 typedef AORB AorbFeatureDetector;
 typedef AORB AorbDescriptorExtractor;
-
 
 }
 #endif

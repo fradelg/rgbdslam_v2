@@ -15,8 +15,6 @@
  */
 #include "parameter_server.h"
 
-//using namespace std;
-
 ParameterServer* ParameterServer::_instance = NULL;
 
 void ParameterServer::defaultConfig() {
@@ -24,7 +22,7 @@ void ParameterServer::defaultConfig() {
   // Input data settings
   addOption("topic_image_mono",              std::string("/camera/rgb/image_color"),    "Color or grayscale image ros topic");
   addOption("camera_info_topic",             std::string("/camera/rgb/camera_info"),    "Required for backprojection if no pointcloud topic is given");
-  addOption("topic_image_depth",             std::string("/camera/depth_registered/sw_registered/image_rect_raw"),        "Depth image ros topic");
+  addOption("topic_image_depth",             std::string("/camera/depth_registered/hw_registered/image_rect_raw"),  "Depth image ros topic");
   addOption("topic_points",                  std::string(""),                           "If omitted, xyz will be computed from depth image. ");
   addOption("wide_topic",                    std::string(""),                           "Topics for stereo cam, e.g. /wide_stereo/left/image_mono");
   addOption("wide_cloud_topic",              std::string(""),                           "Topics for stereo cam e.g. /wide_stereo/points2");
@@ -73,7 +71,7 @@ void ParameterServer::defaultConfig() {
   addOption("odom_frame_name",               std::string(""),                           "A fixed frame estimation from somewhere else (e.g. odometry, laser-based mapping). Doesn't need to correspond to the pose of the fixed_frame_name");
   addOption("odom_target_frame_name",        std::string(""),                           "If given, try to get the odometry transformation from odom_frame_name to this frame instead of the frame of the points. Meant to compute the offset between robot base and sensor online.");
   addOption("ground_truth_frame_name",       std::string(""),                           "Use empty string if no ground truth tf frame available");
-  addOption("base_frame_name",               std::string("/openni_rgb_optical_frame"),               "If the camera is articulated use robot base");
+  addOption("base_frame_name",               std::string("/camera_rgb_optical_frame"),  "If the camera is articulated use robot base");
   addOption("fixed_camera",                  static_cast<bool> (true),                  "Is camera fixed relative to base?");
 
   // Visual Features, to activate GPU-based features see CMakeLists.txt 

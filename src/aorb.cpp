@@ -567,36 +567,123 @@ static inline float getScale(int level, int firstLevel, double scaleFactor)
     return (float)std::pow(scaleFactor, (double)(level - firstLevel));
 }
 
-/** Constructor
- * @param detector_params parameters to use
- */
-AORB::AORB(int _nfeatures, float _scaleFactor, int _nlevels, int _edgeThreshold,
-         int _firstLevel, int WTA_K, int _scoreType, int _patchSize, int _fastThreshold) :
-    nfeatures(_nfeatures), scaleFactor(_scaleFactor), nlevels(_nlevels),
-    edgeThreshold(_edgeThreshold), firstLevel(_firstLevel), WTA_K(WTA_K),
-    scoreType(_scoreType), patchSize(_patchSize), fastThreshold(_fastThreshold)
-{}
 
+#if CV_MAJOR_VERSION > 2
 
-int AORB::descriptorSize() const
+class AORB_Impl : public AORB
+{
+public:
+    explicit AORB_Impl(int _nfeatures, float _scaleFactor, int _nlevels, int _edgeThreshold,
+             int _firstLevel, int _WTA_K, int _scoreType, int _patchSize, int _fastThreshold);
+
+    void setMaxFeatures(int maxFeatures) { nfeatures = maxFeatures; }
+    int getMaxFeatures() const { return nfeatures; }
+
+    void setScaleFactor(double scaleFactor_) { scaleFactor = scaleFactor_; }
+    double getScaleFactor() const { return scaleFactor; }
+
+    void setNLevels(int nlevels_) { nlevels = nlevels_; }
+    int getNLevels() const { return nlevels; }
+
+    void setEdgeThreshold(int edgeThreshold_) { edgeThreshold = edgeThreshold_; }
+    int getEdgeThreshold() const { return edgeThreshold; }
+
+    void setFirstLevel(int firstLevel_) { firstLevel = firstLevel_; }
+    int getFirstLevel() const { return firstLevel; }
+
+    void setWTA_K(int wta_k_) { WTA_K = wta_k_; }
+    int getWTA_K() const { return WTA_K; }
+
+    void setScoreType(int scoreType_) { scoreType = scoreType_; }
+    int getScoreType() const { return scoreType; }
+
+    void setPatchSize(int patchSize_) { patchSize = patchSize_; }
+    int getPatchSize() const { return patchSize; }
+
+    void setFastThreshold(int fastThreshold_) { fastThreshold = fastThreshold_; }
+    int getFastThreshold() const { return fastThreshold; }
+
+    // returns the descriptor size in bytes
+    int descriptorSize() const;
+    // returns the descriptor type
+    int descriptorType() const;
+    // returns the default norm type
+    int defaultNorm() const;
+
+    // Compute the ORB_Impl features and descriptors on an image
+    void detectAndCompute( InputArray image, InputArray mask, std::vector<KeyPoint>& keypoints,
+                     OutputArray descriptors, bool useProvidedKeypoints=false );
+
+protected:
+    int nfeatures;
+    double scaleFactor;
+    int nlevels;
+    int edgeThreshold;
+    int fastThreshold;
+    int firstLevel;
+    int WTA_K;
+    int scoreType;
+    int patchSize;
+};
+
+Ptr<AORB> AORB::create(int _nfeatures, float _scaleFactor, int _nlevels, int _edgeThreshold,
+                       int _firstLevel, int WTA_K, int _scoreType, int _patchSize, int _fastThreshold)
+{
+    return makePtr<AORB_Impl>(_nfeatures, _scaleFactor, _nlevels, _edgeThreshold,
+                              _firstLevel, WTA_K, _scoreType, _patchSize, _fastThreshold);
+}
+
+AORB_Impl::AORB_Impl(
+#else
+AORB::AORB(
+#endif
+        int _nfeatures,
+        float _scaleFactor,
+        int _nlevels,
+        int _edgeThreshold,
+        int _firstLevel,
+        int WTA_K,
+        int _scoreType,
+        int _patchSize,
+        int _fastThreshold) :
+    nfeatures(_nfeatures),
+    scaleFactor(_scaleFactor),
+    nlevels(_nlevels),
+    edgeThreshold(_edgeThreshold),
+    firstLevel(_firstLevel),
+    WTA_K(WTA_K),
+    scoreType(_scoreType),
+    patchSize(_patchSize),
+    fastThreshold(_fastThreshold)
+{
+}
+
+int AORB_Impl::descriptorSize() const
 {
     return kBytes;
 }
 
-int AORB::descriptorType() const
+int AORB_Impl::descriptorType() const
 {
     return CV_8U;
-}    
-    
+}
+
+int AORB_Impl::defaultNorm() const
+{
+    return NORM_HAMMING;
+}
+
 /** Compute the AORB features and descriptors on an image
  * @param img the image to compute the features and descriptors on
  * @param mask the mask to apply
  * @param keypoints the resulting keypoints
  */
+#if CV_MAJOR_VERSION == 2
 void AORB::operator()(InputArray image, InputArray mask, std::vector<KeyPoint>& keypoints) const
 {
     (*this)(image, mask, keypoints, noArray(), false);
 }
+#endif
 
 
 /** Compute the AORB keypoint orientations
@@ -741,8 +828,20 @@ static void computeDescriptors(const Mat& image, std::vector<KeyPoint>& keypoint
  * @param do_keypoints if true, the keypoints are computed, otherwise used as an input
  * @param do_descriptors if true, also computes the descriptors
  */
-void AORB::operator()( InputArray _image, InputArray _mask, std::vector<KeyPoint>& _keypoints,
-                      OutputArray _descriptors, bool useProvidedKeypoints) const
+#if CV_MAJOR_VERSION > 2
+void AORB_Impl::detectAndCompute(InputArray _image,
+                                 InputArray _mask,
+                                 std::vector<KeyPoint>& _keypoints,
+                                 OutputArray _descriptors,
+                                 bool useProvidedKeypoints)
+#else
+void AORB::operator()(
+        InputArray _image,
+        InputArray _mask,
+        std::vector<KeyPoint>& _keypoints,
+        OutputArray _descriptors,
+        bool useProvidedKeypoints) const
+#endif
 {
     bool do_keypoints = !useProvidedKeypoints;
     bool do_descriptors = _descriptors.needed();
@@ -954,7 +1053,8 @@ void AORB::operator()( InputArray _image, InputArray _mask, std::vector<KeyPoint
         _keypoints.insert(_keypoints.end(), keypoints.begin(), keypoints.end());
     }
 }
-    
+
+#if CV_MAJOR_VERSION == 2
 void AORB::detectImpl( const Mat& image, std::vector<KeyPoint>& keypoints, const Mat& mask) const
 {
     (*this)(image, mask, keypoints, noArray(), false);
@@ -965,7 +1065,7 @@ void AORB::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat&
     (*this)(image, Mat(), keypoints, descriptors, true);
 }
 
-static Algorithm* createAORB() { return new AORB; }
-
+static Algorithm* createAORB() { return new AORB; }  
+#endif
 }
 

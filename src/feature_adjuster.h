@@ -9,7 +9,7 @@ namespace cv {
 /** \brief A feature detector parameter adjuster, this is used by the DynamicAdaptedFeatureDetector
  *  and is a wrapper for FeatureDetector that allow them to be adjusted after a detection
  */
-class CV_EXPORTS AdjusterAdapter: public FeatureDetector
+class AdjusterAdapter: public FeatureDetector
 {
 public:
     /** pure virtual interface
@@ -49,7 +49,12 @@ class DetectorAdjuster: public cv::AdjusterAdapter
 {
 public:
     ///Initial values are for SURF detector
-    DetectorAdjuster(const char* detector_name, double initial_thresh=200.f, double min_thresh=2, double max_thresh=10000, double increase_factor=1.3, double decrease_factor=0.7 );
+    DetectorAdjuster(const char* detector_name,
+                     double initial_thresh=200.f,
+                     double min_thresh=2,
+                     double max_thresh=10000,
+                     double increase_factor=1.3,
+                     double decrease_factor=0.7 );
     
     virtual void tooFew(int minv, int n_detected);
     virtual void tooMany(int maxv, int n_detected);
@@ -59,8 +64,19 @@ public:
 
     void setIncreaseFactor(double new_factor);
     void setDecreaseFactor(double new_factor);
+
+#if CV_MAJOR_VERSION > 2
+    CV_WRAP virtual void detectAndCompute( cv::InputArray image,
+                                   cv::InputArray mask,
+                                   CV_OUT std::vector<cv::KeyPoint>& keypoints,
+                                   cv::OutputArray descriptors,
+                                   bool useProvidedKeypoints = false );
+#endif
+
 protected:
-    virtual void detectImpl( const cv::Mat& image, std::vector<cv::KeyPoint>& keypoints, const cv::Mat& mask=cv::Mat() ) const;
+    virtual void detectImpl( const cv::Mat& image,
+                             std::vector<cv::KeyPoint>& keypoints,
+                             const cv::Mat& mask=cv::Mat() ) const;
 
     double thresh_, min_thresh_, max_thresh_;
     double increase_factor_, decrease_factor_;
@@ -102,8 +118,18 @@ public:
     virtual cv::Ptr<StatefulFeatureDetector> clone() const;
     virtual bool empty() const;
 
+#if CV_MAJOR_VERSION > 2
+    CV_WRAP virtual void detectAndCompute( cv::InputArray image,
+                                   cv::InputArray mask,
+                                   CV_OUT std::vector<cv::KeyPoint>& keypoints,
+                                   cv::OutputArray descriptors,
+                                   bool useProvidedKeypoints = false );
+#endif
+
 protected:
-    virtual void detectImpl( const cv::Mat& image, std::vector<cv::KeyPoint>& keypoints, const cv::Mat& mask=cv::Mat() ) const;
+    virtual void detectImpl( const cv::Mat& image,
+                             std::vector<cv::KeyPoint>& keypoints,
+                             const cv::Mat& mask=cv::Mat() ) const;
 
 private:
     VideoDynamicAdaptedFeatureDetector& operator=(const VideoDynamicAdaptedFeatureDetector&);
@@ -113,10 +139,6 @@ private:
     int min_features_, max_features_;
     mutable cv::Ptr<cv::AdjusterAdapter> adjuster_;
 };
-
-
-
-
 
 
 /*
@@ -141,6 +163,14 @@ public:
     // TODO implement read/write
     virtual bool empty() const;
     virtual cv::Ptr<StatefulFeatureDetector> clone() const;
+
+#if CV_MAJOR_VERSION > 2
+    CV_WRAP virtual void detectAndCompute( cv::InputArray image,
+                                   cv::InputArray mask,
+                                   CV_OUT std::vector<cv::KeyPoint>& keypoints,
+                                   cv::OutputArray descriptors,
+                                   bool useProvidedKeypoints = false );
+#endif
 
 protected:
     VideoGridAdaptedFeatureDetector& operator=(const VideoGridAdaptedFeatureDetector&);

@@ -58,17 +58,22 @@
 
 using namespace cv;
 
-DetectorAdjuster::DetectorAdjuster(const char* detector_name, double initial_thresh, double min_thresh, double max_thresh, double increase_factor, double decrease_factor ) :
+DetectorAdjuster::DetectorAdjuster(const char* detector_name,
+                                   double initial_thresh,
+                                   double min_thresh,
+                                   double max_thresh,
+                                   double increase_factor,
+                                   double decrease_factor ) :
     thresh_(initial_thresh), 
     min_thresh_(min_thresh), max_thresh_(max_thresh),
     increase_factor_(increase_factor), decrease_factor_(decrease_factor),
     detector_name_(detector_name)
 {
-    if(!(detector_name_ == "SURF" || 
-         detector_name_ == "SIFT" ||
-         detector_name_ == "FAST" ||
-         detector_name_ == "AORB"))
-    { //None of the above
+    if (!(detector_name_ == "SURF" ||
+          detector_name_ == "SIFT" ||
+          detector_name_ == "FAST" ||
+          detector_name_ == "AORB"))
+    {
       std::cerr << "Unknown Descriptor";
     }
 }
@@ -95,15 +100,17 @@ void DetectorAdjuster::detectImpl(const Mat& image, std::vector<KeyPoint>& keypo
       detector = new FastFeatureDetector(thresh_);
 #endif
     } else if(strcmp(detector_name_, "AORB") == 0){
-      //Default params except last
+#if CV_MAJOR_VERSION > 2
+      detector = AorbFeatureDetector::create(10000, 1.2, 8, 15, 0, 2, 0, 31, static_cast<int>(thresh_));
+#else
       detector = new AorbFeatureDetector(10000, 1.2, 8, 15, 0, 2, 0, 31, static_cast<int>(thresh_));
-      //detector->set("fastThreshold", static_cast<int>(thresh_));//Not threadsafe (parallelized grid)
+#endif
     } else {
 //      FeatureDetector::create(detector_name_);
       std::cerr << "Unknown Descriptor, not setting threshold";
     }
     //ROS_INFO("Calling Detect with threshold %f", thresh_);
-    //std::cout << "Performing detection with " << detector_name_ << ". Threshold: " << thresh_ << std::endl;
+    std::cout << "Performing detection with " << detector_name_ << ". Threshold: " << thresh_ << std::endl;
     detector->detect(image, keypoints, mask);
 }
 
@@ -172,7 +179,9 @@ bool hasNonZero(const cv::Mat& img){
   }
   return false;
 }
-void VideoDynamicAdaptedFeatureDetector::detectImpl(const cv::Mat& _image, std::vector<KeyPoint>& keypoints, const cv::Mat& _mask) const
+void VideoDynamicAdaptedFeatureDetector::detectImpl(const cv::Mat& _image,
+                                                    std::vector<KeyPoint>& keypoints,
+                                                    const cv::Mat& _mask) const
 {
     //In contraast to the original, no oscillation testing is needed as
     //the loop is broken out of anyway, if too many features were found.
@@ -324,3 +333,31 @@ cv::Ptr<StatefulFeatureDetector> VideoGridAdaptedFeatureDetector::clone() const
   return cloned_obj;
 }
 
+#if CV_MAJOR_VERSION > 2
+void DetectorAdjuster::detectAndCompute(cv::InputArray image,
+                                        cv::InputArray mask,
+                                        std::vector<KeyPoint>& keypoints,
+                                        cv::OutputArray,
+                                        bool)
+{
+    detectImpl(image.getMat(), keypoints, mask.getMat());
+}
+
+void VideoDynamicAdaptedFeatureDetector::detectAndCompute(cv::InputArray image,
+                                                          cv::InputArray mask,
+                                                          std::vector<cv::KeyPoint> &keypoints,
+                                                          cv::OutputArray ,
+                                                          bool )
+{
+    detectImpl(image.getMat(), keypoints, mask.getMat());
+}
+
+void VideoGridAdaptedFeatureDetector::detectAndCompute(cv::InputArray image,
+                                                       cv::InputArray mask,
+                                                       std::vector<cv::KeyPoint> &keypoints,
+                                                       cv::OutputArray ,
+                                                       bool )
+{
+    detectImpl(image.getMat(), keypoints, mask.getMat());
+}
+#endif
