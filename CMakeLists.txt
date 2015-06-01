@@ -29,7 +29,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake-mo
 # Find catkin macros and libraries
 find_package(catkin
   REQUIRED COMPONENTS
-    pcl_conversions pcl_ros roscpp image_transport
+    octomap pcl_conversions pcl_ros roscpp image_transport
     cv_bridge sensor_msgs geometry_msgs visualization_msgs
     std_msgs tf message_generation message_filters rosbag rosconsole
 )
@@ -37,7 +37,6 @@ find_package(catkin
 # System dependencies are found with CMake's conventions
 find_package(OpenCV REQUIRED)
 find_package(PCL 1.7 REQUIRED COMPONENTS common io)
-find_package(octomap 1.6 REQUIRED)
 find_package(G2O REQUIRED)
 find_package(CSparse REQUIRED)
 find_package(Qt4 REQUIRED)
