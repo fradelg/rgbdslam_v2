@@ -18,6 +18,7 @@
 #ifndef OPENNI_LISTENER_H
 #define OPENNI_LISTENER_H
 
+#ifndef Q_MOC_RUN
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
@@ -28,11 +29,12 @@
 #include <rosbag/bag.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
+#include "graph_manager.h"
+#endif
 
 #include <QImage>
 #include <QStringList>
 
-#include "graph_manager.h"
 
 //forward-declare to avoid including tf
 ///\cond

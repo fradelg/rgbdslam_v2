@@ -28,9 +28,12 @@
 
 #include <QMainWindow>
 #include <QGridLayout>
-#include "parameter_server.h"
 #include <QMatrix4x4>
 #include <QMap>
+
+#ifndef Q_MOC_RUN
+#include "parameter_server.h"
+#endif
 
 class QAction;
 class QActionGroup;

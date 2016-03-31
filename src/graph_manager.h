@@ -25,6 +25,7 @@
 #ifndef GRAPH_MANAGER_H_
 #define GRAPH_MANAGER_H_
 
+#ifndef Q_MOC_RUN
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
 #include "node.h"
@@ -34,6 +35,8 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <map>
+#endif
+
 #include <QObject>
 #include <QString>
 #include <QMatrix4x4>
@@ -47,6 +50,8 @@
 #include <ctime>
 #include <memory> //for auto_ptr
 #include <utility>
+
+#ifndef Q_MOC_RUN
 #include "parameter_server.h"
 // #define DO_LOOP_CLOSING
 // DO_FEATURE_OPTIMIZATION is set in CMakeLists.txt
@@ -63,6 +68,7 @@
 
 #include "g2o/core/hyper_dijkstra.h"
 #include "g2o/core/robust_kernel_impl.h"
+#endif
 
 namespace tf {
 class TransformListener;

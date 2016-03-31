@@ -18,7 +18,7 @@ IF (${USE_GL2PS})
   add_definitions(-DGL2PS)
 ENDIF (${USE_GL2PS})
 
-#is used for compiling the libraries 
+#is used for compiling the libraries
 set(USE_GICP 0)
 IF (${USE_GICP_BIN} OR ${USE_GICP_CODE})
 	set(USE_GICP 1)
@@ -29,19 +29,20 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake-mo
 # Find catkin macros and libraries
 find_package(catkin
   REQUIRED COMPONENTS
-    octomap pcl_conversions pcl_ros roscpp image_transport
+    pcl_conversions pcl_ros roscpp image_transport
     cv_bridge sensor_msgs geometry_msgs visualization_msgs
     std_msgs tf message_generation message_filters rosbag rosconsole
 )
 
 # System dependencies are found with CMake's conventions
 find_package(OpenCV REQUIRED)
-find_package(PCL 1.7 REQUIRED COMPONENTS common io)
-find_package(G2O REQUIRED)
+find_package(PCL REQUIRED COMPONENTS common io)
 find_package(CSparse REQUIRED)
 find_package(Qt4 REQUIRED)
+find_package(G2O REQUIRED)
 find_package(OpenMP)
 find_package(Eigen3)
+find_package(Octomap)
 
 add_service_files(
   DIRECTORY srv
@@ -53,8 +54,8 @@ generate_messages()
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES my_pcl_tutorial
-  CATKIN_DEPENDS pcl_conversions pcl_ros roscpp sensor_msgs 
-  DEPENDS message_runtime std_msgs 
+  CATKIN_DEPENDS pcl_conversions pcl_ros roscpp sensor_msgs
+  DEPENDS message_runtime std_msgs
 )
 
 link_directories(
@@ -80,7 +81,7 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-# This is necessary as all ui files etc will get dumped in the bottom of then binary directory. 
+# This is necessary as all ui files etc will get dumped in the bottom of then binary directory.
 include_directories(
   ${CMAKE_CURRENT_BINARY_DIR}
   ${QT_QTOPENGL_INCLUDE_DIR}
@@ -107,7 +108,7 @@ add_definitions(-DROSCONSOLE_MIN_SEVERITY=ROSCONSOLE_SEVERITY_INFO)
 if (${USE_SIFT_GPU})
   add_subdirectory(external)
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/SiftGPU/src)
-  link_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/SiftGPU/bin)	
+  link_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/SiftGPU/bin)
   add_definitions(-DUSE_SIFT_GPU)
   add_definitions(-DSIFT_GPU_MODE=${SIFT_GPU_MODE})
 endif (${USE_SIFT_GPU})
@@ -126,12 +127,12 @@ IF (${USE_GICP})
 	    RESULT_VARIABLE gicp_return
     )
   MESSAGE("\n------------------------------------------------------------------\n")
-	
+
 	#on error
 	IF (NOT ${gicp_return} EQUAL 0)
 		MESSAGE(FATAL_ERROR "GICP cannot be compiled. Returned: ${gicp_return}")
 	ENDIF (NOT ${gicp_return} EQUAL 0)
-	
+
 	FILE(COPY ${gicp_build_path}/lib/libANN.a DESTINATION ${CMAKE_SOURCE_DIR}/lib/)
 ENDIF (${USE_GICP})
 
@@ -160,7 +161,7 @@ file(GLOB_RECURSE QT_MOC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} FOLLOW_SYMLINKS in
 
 QT4_ADD_RESOURCES(QT_RESOURCES_CPP ${QT_RESOURCES})
 QT4_WRAP_UI(QT_FORMS_HPP ${QT_FORMS})
-QT4_WRAP_CPP(QT_MOC_HPP ${QT_MOC})  
+QT4_WRAP_CPP(QT_MOC_HPP ${QT_MOC})
 
 ##############################################################################
 # Sources to Compile
@@ -226,12 +227,14 @@ IF (${USE_GICP})
  	SET(LIBS_LINK ${LIBS_LINK} gicp ANN gsl gslcblas)
 ENDIF (${USE_GICP})
 
+message(STATUS "${G2O_LIBRARIES}")
+
 target_link_libraries(rgbdslam
   ${LIBS_LINK}
   ${catkin_LIBRARIES}
   ${OCTOMAP_LIBRARIES}
-  ${G2O_LIBRARIES}
   ${CSPARSE_LIBRARY}
+  ${G2O_LIBRARIES}
   ${QT_LIBRARIES}
   ${QT_QTOPENGL_LIBRARY}
   ${GLUT_LIBRARY}
@@ -273,10 +276,10 @@ install(DIRECTORY
 #
 #QT4_ADD_RESOURCES(QT_RESOURCES_CPP2 ${QT_RESOURCES2})
 #QT4_WRAP_UI(QT_FORMS_HPP2 ${QT_FORMS2})
-#QT4_WRAP_CPP(QT_MOC_HPP2 ${QT_MOC2})  
+#QT4_WRAP_CPP(QT_MOC_HPP2 ${QT_MOC2})
 #
 #
 #SET(ADDITIONAL_SOURCES2 src/result-bag-viewer.cpp src/bagloader.cpp src/qtros.cpp  src/qt_gui.cpp src/glviewer.cpp src/parameter_server.cpp src/misc.cpp src/ColorOctomapServer.cpp src/scoped_timer.cpp)
 #add_executable(bagviewer ${QT_SOURCES2} ${QT_RESOURCES_CPP2} ${QT_FORMS_HPP2} ${QT_MOC_HPP2} ${ADDITIONAL_SOURCES2})
 #target_link_libraries(bagviewer ${LIBS_LINK})
-# 
+#

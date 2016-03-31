@@ -7,7 +7,7 @@
     The created world model can be saved as point cloud or integrated into an octomap.
   </description>
 
-  <!-- One maintainer tag required, multiple allowed, one person per tag --> 
+  <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
   <maintainer email="endres@informatik.uni-freiburg.de">Felix Endres</maintainer>
@@ -49,6 +49,8 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>octomap</build_depend>
   <build_depend>visualization_msgs</build_depend>
+  <build_depend>image_transport</build_depend>
+
   <run_depend>pcl_conversions</run_depend>
   <run_depend>pcl_ros</run_depend>
   <run_depend>roscpp</run_depend>
@@ -56,19 +58,18 @@
   <run_depend>sensor_msgs</run_depend>
   <run_depend>octomap</run_depend>
   <run_depend>visualization_msgs</run_depend>
+  <run_depend>cv_bridge</run_depend>
 
   <!-- own stuff -->
   <build_depend>libpcl-all-dev</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>libg2o</build_depend>
   <build_depend>message_generation</build_depend>
-  <build_depend>image_transport</build_depend>
   <build_depend>rosbag</build_depend>
   <build_depend>glut</build_depend>
   <build_depend>libglew-dev</build_depend>
 
   <run_depend>rosbag</run_depend>
-  <run_depend>cv_bridge</run_depend>
   <run_depend>libpcl-all</run_depend>
   <run_depend>tf</run_depend>
   <run_depend>libg2o</run_depend>

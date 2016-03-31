@@ -16,7 +16,7 @@
 #include <GL/gl.h>
 
 ColorOctomapServer::ColorOctomapServer() : m_octoMap(0.05)
-{ 
+{
   reset();
 }
 
@@ -40,13 +40,13 @@ bool ColorOctomapServer::save(const char* filename) const
   ScopedTimer s(__FUNCTION__);
   std::ofstream outfile(filename, std::ios_base::out | std::ios_base::binary);
   if (outfile.is_open()){
-    //m_octoMap.writeConst(outfile); 
+    //m_octoMap.writeConst(outfile);
     if (ParameterServer::instance()->get<bool>("concurrent_io")) {
       ROS_INFO("Waiting for rendering thread to finish");
       rendering.waitForFinished();
     }
     ROS_INFO("Writing octomap to %s", filename);
-    m_octoMap.write(outfile); 
+    m_octoMap.write(outfile);
     outfile.close();
     ROS_INFO("color tree written %s", filename);
     return true;
@@ -59,7 +59,7 @@ bool ColorOctomapServer::save(const char* filename) const
 
 //Same as the other insertCloudCallback, but relies on the sensor position information in the cloud
 void ColorOctomapServer::insertCloudCallback(const pointcloud_type::ConstPtr cloud, double max_range) {
-  
+
   ScopedTimer s(__FUNCTION__);
 
   //Conversions
@@ -75,7 +75,7 @@ void ColorOctomapServer::insertCloudCallback(const pointcloud_type::ConstPtr clo
   //Conversions
   boost::shared_ptr<octomap::Pointcloud> octomapCloud(new octomap::Pointcloud());
 
-  //Work 
+  //Work
   octomapCloud->reserve(pcl_cloud->size());
   for (pointcloud_type::const_iterator it = pcl_cloud->begin(); it != pcl_cloud->end(); ++it){
     if (!std::isnan(it->z)) octomapCloud->push_back(it->x, it->y, it->z);
@@ -94,7 +94,7 @@ void ColorOctomapServer::insertCloudCallbackCommon(boost::shared_ptr<octomap::Po
                                                    pointcloud_type::ConstPtr color_cloud,
                                                    const octomap::point3d& origin, double max_range) {
   if(m_octoMap.getResolution() != ParameterServer::instance()->get<double>("octomap_resolution")){
-    ROS_WARN("OctoMap resolution changed from %f to %f. Resetting Octomap", 
+    ROS_WARN("OctoMap resolution changed from %f to %f. Resetting Octomap",
              m_octoMap.getResolution(), ParameterServer::instance()->get<double>("octomap_resolution"));
     this->reset();
   }
@@ -102,7 +102,7 @@ void ColorOctomapServer::insertCloudCallbackCommon(boost::shared_ptr<octomap::Po
   //tf::pointTFToMsg(trans.getOrigin(), origin);
 
   ROS_DEBUG("inserting data");
-  m_octoMap.insertPointCloud(*octomapCloud, origin, max_range, true); 
+  m_octoMap.insertPointCloud(*octomapCloud, origin, max_range, true);
   // integrate color measurements
   unsigned char* colors = new unsigned char[3];
 
@@ -110,7 +110,7 @@ void ColorOctomapServer::insertCloudCallbackCommon(boost::shared_ptr<octomap::Po
   pointcloud_type::const_iterator it;
   for (it = color_cloud->begin(); it != color_cloud->end(); ++it) {
     // Check if the point is invalid
-    if (!isnan(it->x) && !isnan(it->y) && !isnan(it->z)) {
+    if (!std::isnan(it->x) && !std::isnan(it->y) && !std::isnan(it->z)) {
 #ifndef RGB_IS_4TH_DIM
       const int rgb = *reinterpret_cast<const int*>(&(it->rgb));
 #else
@@ -129,8 +129,8 @@ void ColorOctomapServer::insertCloudCallbackCommon(boost::shared_ptr<octomap::Po
 }
 
 //Filter, e.g. points in free space
-void ColorOctomapServer::occupancyFilter(pointcloud_type::ConstPtr input, 
-                                         pointcloud_type::Ptr output, 
+void ColorOctomapServer::occupancyFilter(pointcloud_type::ConstPtr input,
+                                         pointcloud_type::Ptr output,
                                          double occupancy_threshold){
   if(output->points.capacity() < input->size()){ //cannot happen for input == output
     output->reserve(input->size());
@@ -144,7 +144,7 @@ void ColorOctomapServer::occupancyFilter(pointcloud_type::ConstPtr input,
   for (size_t inidx = 0; inidx < size; ++inidx){
     const point_type& in_point = (*input)[inidx];
     Eigen::Vector3f in_vec = q * in_point.getVector3fMap() + t.head<3>();
-    if (std::isnan(in_vec.z())) 
+    if (std::isnan(in_vec.z()))
       continue;
 
     const int radius = 1;
@@ -171,15 +171,15 @@ void ColorOctomapServer::occupancyFilter(pointcloud_type::ConstPtr input,
         }
       }
     }
-            
 
-    if(sum_of_occupancy < occupancy_threshold * sum_of_weights) //Filters points in non-existent nodes (outside of map?) 
-    //if(node != NULL && node->getOccupancy() >= occupancy_threshold) 
+
+    if(sum_of_occupancy < occupancy_threshold * sum_of_weights) //Filters points in non-existent nodes (outside of map?)
+    //if(node != NULL && node->getOccupancy() >= occupancy_threshold)
     { //Valid point
       point_type& out_point = (*output)[outidx];
       out_point = in_point;
       ++outidx;
-    } 
+    }
   }
   output->resize(outidx);//downsize
 }
@@ -192,7 +192,7 @@ void ColorOctomapServer::render(){
   int level = ParameterServer::instance()->get<int>("octomap_display_level");
   if(occ_thresh > 0) {
     glDisable(GL_LIGHTING);
-    glEnable (GL_BLEND); 
+    glEnable (GL_BLEND);
     //glDisable(GL_CULL_FACE);
     glBegin(GL_TRIANGLES);
     double stretch_factor = 128/(1 - occ_thresh); //occupancy range in which the displayed cubes can be
@@ -206,9 +206,9 @@ void ColorOctomapServer::render(){
       }
       glColor4ub(it->getColor().r, it->getColor().g, it->getColor().b, 128 /*basic visibility*/ + (occ - occ_thresh) * stretch_factor );
       float halfsize = it.getSize()/2.0;
-      float x = it.getX(); 
-      float y = it.getY(); 
-      float z = it.getZ(); 
+      float x = it.getX();
+      float y = it.getY();
+      float z = it.getZ();
       //Front
       glVertex3f(x-halfsize,y-halfsize,z-halfsize);
       glVertex3f(x-halfsize,y+halfsize,z-halfsize);

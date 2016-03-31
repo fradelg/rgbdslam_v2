@@ -1,15 +1,15 @@
 /* This file is part of RGBDSLAM.
- * 
+ *
  * RGBDSLAM is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * RGBDSLAM is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with RGBDSLAM.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -22,7 +22,7 @@
 #define PCL_NO_PRECOMPILE
 #endif
 
-#include "ros/ros.h"
+#include <ros/ros.h>
 #include <vector>
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
@@ -50,7 +50,7 @@
 #include "gicp/transform.h"
 #endif
 
-#include "matching_result.h" 
+#include "matching_result.h"
 #include <Eigen/StdVector>
 #include "header.h"
 
@@ -58,18 +58,18 @@ typedef std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f> >
 //!Holds the data for one graph node and provides functionality to compute relative transformations to other Nodes.
 class Node {
 public:
-	///Visual must be CV_8UC1, depth CV_32FC1, 
-	///detection_mask must be CV_8UC1 with non-zero 
+	///Visual must be CV_8UC1, depth CV_32FC1,
+	///detection_mask must be CV_8UC1 with non-zero
 	///at potential keypoint locations
 	Node(const cv::Mat& visual,
 			 const cv::Mat& depth,
 			 const cv::Mat& detection_mask,
-       const sensor_msgs::CameraInfoConstPtr& cam_info, 
+       const sensor_msgs::CameraInfoConstPtr& cam_info,
        myHeader depth_header,
 			 cv::Ptr<cv::FeatureDetector> detector,
 			 cv::Ptr<cv::DescriptorExtractor> extractor);
 	///Visual must be CV_8UC1
-	///detection_mask must be CV_8UC1 with non-zero 
+	///detection_mask must be CV_8UC1 with non-zero
 	///at potential keypoint locations
 	Node(const cv::Mat visual,
 			 cv::Ptr<cv::FeatureDetector> detector,
@@ -99,9 +99,9 @@ public:
   tf::StampedTransform getBase2PointsTransform() const;
 
 	///Compute the relative transformation between the nodes
-	bool getRelativeTransformationTo(const Node* target_node, 
+	bool getRelativeTransformationTo(const Node* target_node,
 			std::vector<cv::DMatch>* initial_matches,
-			Eigen::Matrix4f& resulting_transformation, 
+			Eigen::Matrix4f& resulting_transformation,
 			float& rmse,
 			std::vector<cv::DMatch>& matches) const;
 
@@ -111,8 +111,8 @@ public:
 	bool getRelativeTransformationTo_ICP_bin(const Node* target_node,Eigen::Matrix4f& transformation,
 			const Eigen::Matrix4f* initial_transformation = NULL);
 #endif
-	
-  //!Fills "matches" and returns ratio of "good" features 
+
+  //!Fills "matches" and returns ratio of "good" features
   //!in the sense of distinction via the "nn_distance_ratio" setting (see parameter server)
 	unsigned int featureMatching(const Node* other, std::vector<cv::DMatch>* matches) const;
 
@@ -120,12 +120,12 @@ public:
 	bool getRelativeTransformationTo_ICP_code(const Node* target_node,
                                             Eigen::Matrix4f& transformation,
                                             const Eigen::Matrix4f& initial_transformation);
-	
+
 	static const double gicp_epsilon = 1e-3;
 	static const double gicp_d_max_ = 5.0; // 10cm
 	static const int gicp_max_iterations = 10;
 	static const int gicp_min_point_cnt = 100;
-		
+
 	bool gicp_initialized;
 	void Eigen2GICP(const Eigen::Matrix4f& m, dgc_transform_t g_m);
 	void GICP2Eigen(const dgc_transform_t g_m, Eigen::Matrix4f& m);
@@ -164,14 +164,14 @@ public:
   pointcloud_type::Ptr filtered_pc_col; //<Used for icp. May not contain NaN
 #endif
   ///descriptor definitions
-	cv::Mat feature_descriptors_;         
+	cv::Mat feature_descriptors_;
 
   ///backprojected 3d descriptor locations relative to cam position in homogeneous coordinates (last dimension is 1.0)
-	std_vector_of_eigen_vector4f feature_locations_3d_;  
+	std_vector_of_eigen_vector4f feature_locations_3d_;
 	std::vector<float> siftgpu_descriptors;
 
   ///Where in the image are the descriptors
-	std::vector<cv::KeyPoint> feature_locations_2d_; 
+	std::vector<cv::KeyPoint> feature_locations_2d_;
   ///Contains the minimum and maximum depth in the feature's range (not used yet)
   std::vector<std::pair<float, float> > feature_depth_stats_;
   ///Contains how often a feature has been an (inlier) match
@@ -190,7 +190,7 @@ public:
   void knnSearch(cv::Mat& query,
                  cv::Mat& indices,
                  cv::Mat& dists,
-                 int knn, 
+                 int knn,
                  const cv::flann::SearchParams& params) const;
 
   myHeader header_;
@@ -205,27 +205,27 @@ protected:
   tf::StampedTransform ground_truth_transform_;//!<contains the transformation from the mocap system
   tf::StampedTransform odom_transform_;        //!<contains the transformation from the wheel encoders/joint states
   int initial_node_matches_;
-  sensor_msgs::CameraInfo cam_info_; 
+  sensor_msgs::CameraInfo cam_info_;
   //void computeKeypointDepthStats(const cv::Mat& depth_img, const std::vector<cv::KeyPoint> keypoints);
 
 #ifdef USE_SIFT_GPU
-	//! return the 3D projection of valid keypoints using information from the point cloud and remove invalid keypoints (NaN depth) 
+	//! return the 3D projection of valid keypoints using information from the point cloud and remove invalid keypoints (NaN depth)
 	void projectTo3DSiftGPU(std::vector<cv::KeyPoint>& feature_locations_2d,
                           std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f> >& feature_locations_3d,
-                            const pointcloud_type::Ptr point_cloud, 
+                            const pointcloud_type::Ptr point_cloud,
                             std::vector<float>& descriptors_in, cv::Mat& descriptors_out);
-	//! return the 3D projection of valid keypoints using information from the depth image and remove invalid keypoints (NaN depth) 
+	//! return the 3D projection of valid keypoints using information from the depth image and remove invalid keypoints (NaN depth)
 	void projectTo3DSiftGPU(std::vector<cv::KeyPoint>& feature_locations_2d,
                           std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f> >& feature_locations_3d,
                           const cv::Mat& depth,
                           const sensor_msgs::CameraInfoConstPtr& cam_info,
                           std::vector<float>& descriptors_in, cv::Mat& descriptors_out);
 #endif
-	//! return the 3D projection of valid keypoints using information from the point cloud and remove invalid keypoints (NaN depth) 
+	//! return the 3D projection of valid keypoints using information from the point cloud and remove invalid keypoints (NaN depth)
 	void projectTo3D(std::vector<cv::KeyPoint>& feature_locations_2d,
                    std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f> >& feature_locations_3d,
                    const pointcloud_type::ConstPtr point_cloud);
-	//! return the 3D projection of valid keypoints using information from the depth image and remove invalid keypoints (NaN depth) 
+	//! return the 3D projection of valid keypoints using information from the depth image and remove invalid keypoints (NaN depth)
 	void projectTo3D(std::vector<cv::KeyPoint>& feature_locations_2d,
                    std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f> >& feature_locations_3d,
                    const cv::Mat& depth,
@@ -237,8 +237,8 @@ protected:
 		dist = sqrt(t(0,3)*t(0,3)+t(1,3)*t(1,3)+t(2,3)*t(2,3));
 	}
 
-  
-  ///Retrieves and stores the transformation from base to point cloud at capturing time 
+
+  ///Retrieves and stores the transformation from base to point cloud at capturing time
   void retrieveBase2CamTransformation();
 	// helper for ransac
 	void computeInliersAndError(const std::vector<cv::DMatch> & initial_matches,

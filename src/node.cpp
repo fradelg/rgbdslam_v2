@@ -1,15 +1,15 @@
 /* This file is part of RGBDSLAM.
- * 
+ *
  * RGBDSLAM is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * RGBDSLAM is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with RGBDSLAM.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -316,7 +316,7 @@ Node::Node(const cv::Mat visual,
     double vfs = ps->get<double>("voxelfilter_size");
     pcl::VoxelGrid<point_type> sor;
     sor.setLeafSize(vfs,vfs,vfs);
-    pointcloud_type::ConstPtr const_cloud_ptr = boost::make_shared<pointcloud_type> (*pc_col);                                                                 
+    pointcloud_type::ConstPtr const_cloud_ptr = boost::make_shared<pointcloud_type> (*pc_col);
     sor.setInputCloud (const_cloud_ptr);
     sor.filter (*pc_col);
     */
@@ -418,7 +418,7 @@ dgc::gicp::GICPPointSet* Node::getGICPStructure(unsigned int max_count) const
     non_NaN.reserve((*pc_col).points.size());
     for (unsigned int i = 0; i < (*pc_col).points.size(); i++) {
         point_type& p = (*pc_col).points.at(i);
-        if (!isnan(p.z)) { // add points to candidate pointset for icp
+        if (!std::isnan(p.z)) { // add points to candidate pointset for icp
             g_p.x = p.x;
             g_p.y = p.y;
             g_p.z = p.z;
@@ -828,7 +828,7 @@ void Node::projectTo3D(std::vector<cv::KeyPoint>& feature_locations_2d,
         point_type p3d = point_cloud->at((int)p2d.x, (int)p2d.y);
 
         // Check for invalid measurements
-        if ((p3d.z > maximum_depth) || isnan(p3d.x) || isnan(p3d.y) || isnan(p3d.z)) {
+        if ((p3d.z > maximum_depth) || std::isnan(p3d.x) || std::isnan(p3d.y) || std::isnan(p3d.z)) {
             ROS_DEBUG_NAMED(__FILE__, "Feature %d has been extracted at NaN depth. Omitting", i);
             feature_locations_2d.erase(feature_locations_2d.begin() + i);
             continue;
@@ -865,8 +865,8 @@ void Node::projectTo3D(std::vector<cv::KeyPoint>& feature_locations_2d,
     /*
   float cx = 325.1;//cam_info->K[2]; //(cloud->width >> 1) - 0.5f;
   float cy = 249.7;//cam_info->K[5]; //(cloud->height >> 1) - 0.5f;
-  float fxinv = 1.0/521.0;//1.0f / cam_info->K[0]; 
-  float fyinv = 1.0/521.0;//1.0f / cam_info->K[4]; 
+  float fxinv = 1.0/521.0;//1.0f / cam_info->K[0];
+  float fyinv = 1.0/521.0;//1.0f / cam_info->K[4];
   */
     cv::Point2f p2d;
 
@@ -1444,7 +1444,7 @@ void Node::computeKeypointDepthStats(const cv::Mat& depth_img, const std::vector
 {
     ROS_INFO("Computing Keypoint Depth Statistics");
     BOOST_FOREACH(cv::KeyPoint kp, keypoints)
-    { 
+    {
       int radius = kp.size/2;
       int left = kp.pt.x-radius;
       int top  = kp.pt.y-radius;
@@ -1454,7 +1454,7 @@ void Node::computeKeypointDepthStats(const cv::Mat& depth_img, const std::vector
       if(isnan(nearest)) nearest = 1.0;
       if(isnan(farthest)) farthest = 10.0;
       cv::minMaxLoc(keypoint_neighbourhood, &nearest, &farthest);
-      feature_depth_stats_.push_back(std::make_pair(nearest, farthest)); 
+      feature_depth_stats_.push_back(std::make_pair(nearest, farthest));
     }
 }
 */
