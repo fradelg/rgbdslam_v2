@@ -1,15 +1,15 @@
 /* This file is part of RGBDSLAM.
- * 
+ *
  * RGBDSLAM is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * RGBDSLAM is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with RGBDSLAM.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -21,8 +21,9 @@
 #include <ctime>
 #include <limits>
 #include <algorithm>
-#include "parameter_server.h"
+#include <numeric>
 
+#include "parameter_server.h"
 #include "scoped_timer.h"
 #include "header.h"
 
@@ -56,7 +57,7 @@
 #define SQRT_2 1.41421
 #define LOG_SQRT_2_PI = 0.9189385332
 
-static void getCameraIntrinsics(float& fx, float& fy, float& cx, float& cy, const sensor_msgs::CameraInfo& cam_info) 
+static void getCameraIntrinsics(float& fx, float& fy, float& cx, float& cy, const sensor_msgs::CameraInfo& cam_info)
 {
   ParameterServer* ps = ParameterServer::instance();
   fx = ps->get<double>("depth_camera_fx") != 0 ? ps->get<double>("depth_camera_fx") : cam_info.K[0];
@@ -64,7 +65,7 @@ static void getCameraIntrinsics(float& fx, float& fy, float& cx, float& cy, cons
   cx = ps->get<double>("depth_camera_cx") != 0 ? ps->get<double>("depth_camera_cx") : cam_info.K[2];
   cy = ps->get<double>("depth_camera_cy") != 0 ? ps->get<double>("depth_camera_cy") : cam_info.K[5];
 }
-static void getCameraIntrinsicsInverseFocalLength(float& fxinv, float& fyinv, float& cx, float& cy, const sensor_msgs::CameraInfo& cam_info) 
+static void getCameraIntrinsicsInverseFocalLength(float& fxinv, float& fyinv, float& cx, float& cy, const sensor_msgs::CameraInfo& cam_info)
 {
   getCameraIntrinsics(fxinv, fyinv, cx, cy, cam_info);
   fxinv = 1./ fxinv;
@@ -125,7 +126,7 @@ tf::Transform g2o2TF(const g2o::SE3Quat se3) {
 }
 
 #ifdef HEMACLOUDS
-void transformAndAppendPointCloud (const pointcloud_type &cloud_in, 
+void transformAndAppendPointCloud (const pointcloud_type &cloud_in,
                                    pcl::PointCloud<hema::PointXYZRGBCamSL> &cloud_to_append_to,
                                    const tf::Transform transformation, float max_Depth, int idx)
 {
@@ -145,7 +146,7 @@ void transformAndAppendPointCloud (const pointcloud_type &cloud_in,
     Eigen::Vector3f trans = eigen_transform.block<3, 1> (0, 3);
     size_t i = 0;
     for (; i < cloud_in.points.size (); ++i)
-    { 
+    {
       const point_type& in_pt = cloud_in[i];
       const Eigen::Map<Eigen::Vector3f> vec_in (const_cast<float*>(&in_pt.x), 3, 1);
       hema::PointXYZRGBCamSL out_pt;
@@ -183,7 +184,7 @@ void transformAndAppendPointCloud (const pointcloud_type &cloud_in,
 //template <typename PointT> void
 //transformAndAppendPointCloud (const pcl::PointCloud<PointT> &cloud_in, pcl::PointCloud<PointT> &cloud_to_append_to,
 //                              const tf::Transform transformation)
-void transformAndAppendPointCloud (const pointcloud_type &cloud_in, 
+void transformAndAppendPointCloud (const pointcloud_type &cloud_in,
                                    pointcloud_type &cloud_to_append_to,
                                    const tf::Transform transformation, float max_Depth, int )
 {
@@ -212,7 +213,7 @@ void transformAndAppendPointCloud (const pointcloud_type &cloud_in,
     origin.z = 0;
     int j = 0; //Output index
     for (size_t i = 0; i < cloud_in.points.size (); ++i) //i: Input index
-    { 
+    {
       Eigen::Map<Eigen::Vector3f> p_in (const_cast<float*>(&cloud_in.points[i].x), 3, 1);
       Eigen::Map<Eigen::Vector3f> p_out (&cloud_to_append_to.points[j+cloud_to_append_to_original_size].x, 3, 1);
       if(compact){ cloud_to_append_to.points[j+cloud_to_append_to_original_size] = cloud_in.points[i]; }
@@ -222,7 +223,7 @@ void transformAndAppendPointCloud (const pointcloud_type &cloud_in,
            p_out[0]= std::numeric_limits<float>::quiet_NaN();
            p_out[1]= std::numeric_limits<float>::quiet_NaN();
            p_out[2]= std::numeric_limits<float>::quiet_NaN();
-           if(!compact) j++; 
+           if(!compact) j++;
            continue;
          }
       }
@@ -247,8 +248,8 @@ geometry_msgs::Point pointInWorldFrame(const Eigen::Vector4f& point3d, const g2o
     Eigen::Vector3d tmp(point3d[0], point3d[1], point3d[2]);
     tmp = transf * tmp; //transform to world frame
     geometry_msgs::Point p;
-    p.x = tmp.x(); 
-    p.y = tmp.y(); 
+    p.x = tmp.x();
+    p.y = tmp.y();
     p.z = tmp.z();
     return p;
 }
@@ -308,7 +309,7 @@ bool isSmallTrafo(const Eigen::Isometry3d& t, double seconds){
       ROS_WARN("Time delta invalid: %f. Skipping test for small transformation", seconds);
       return true;
     }
-    
+
     double angle_around_axis, dist;
     trafoSize(t, angle_around_axis, dist);
 
@@ -351,7 +352,7 @@ bool isBigTrafo(const g2o::SE3Quat& t){
 bool overlappingViews(LoadedEdge3D edge){
     //opening angles
    double alpha = 57.0/180.0*M_PI;
-   double beta = 47.0/180.0*M_PI; 
+   double beta = 47.0/180.0*M_PI;
    //assumes robot coordinate system (x is front, y is left, z is up)
    Eigen::Matrix<double, 4,3> cam1;
    cam1 <<  1.0, std::tan(alpha),  std::tan(beta),//upper left
@@ -360,7 +361,7 @@ bool overlappingViews(LoadedEdge3D edge){
                                        1.0, -std::tan(alpha),-std::tan(beta);//lower right
    return false;
 }
-bool triangleRayIntersection(Eigen::Vector3d triangle1,Eigen::Vector3d triangle2, 
+bool triangleRayIntersection(Eigen::Vector3d triangle1,Eigen::Vector3d triangle2,
                              Eigen::Vector3d ray_origin, Eigen::Vector3d ray){
     Eigen::Matrix3d m;
     m.col(2) = -ray;
@@ -372,7 +373,7 @@ bool triangleRayIntersection(Eigen::Vector3d triangle1,Eigen::Vector3d triangle2
 */
 
 
-g2o::SE3Quat tf2G2O(const tf::Transform t) 
+g2o::SE3Quat tf2G2O(const tf::Transform t)
 {
   Eigen::Quaterniond eigen_quat(t.getRotation().getW(), t.getRotation().getX(), t.getRotation().getY(), t.getRotation().getZ());
   Eigen::Vector3d translation(t.getOrigin().x(), t.getOrigin().y(), t.getOrigin().z());
@@ -380,7 +381,7 @@ g2o::SE3Quat tf2G2O(const tf::Transform t)
   return result;
 }
 
-g2o::SE3Quat eigen2G2O(const Eigen::Matrix4d& eigen_mat) 
+g2o::SE3Quat eigen2G2O(const Eigen::Matrix4d& eigen_mat)
 {
   Eigen::Affine3d eigen_transform(eigen_mat);
   Eigen::Quaterniond eigen_quat(eigen_transform.rotation());
@@ -467,9 +468,9 @@ typedef union
 } RGBValue;
 ///\endcond
 
-pointcloud_type* createXYZRGBPointCloud (const cv::Mat& depth_img, 
+pointcloud_type* createXYZRGBPointCloud (const cv::Mat& depth_img,
                                          const cv::Mat& rgb_img,
-                                         const sensor_msgs::CameraInfoConstPtr& cam_info) 
+                                         const sensor_msgs::CameraInfoConstPtr& cam_info)
 {
   ScopedTimer s(__FUNCTION__);
   pointcloud_type* cloud (new pointcloud_type() );
@@ -537,7 +538,7 @@ pointcloud_type* createXYZRGBPointCloud (const cv::Mat& depth_img,
       }
       // Fill in color
       RGBValue color;
-      if(color_idx > 0 && color_idx < rgb_img.total()*color_pix_step){ //Only necessary because of the color_idx offset 
+      if(color_idx > 0 && color_idx < rgb_img.total()*color_pix_step){ //Only necessary because of the color_idx offset
         if(pixel_data_size == 3){
           color.Red   = rgb_img.at<uint8_t>(color_idx + red_idx);
           color.Green = rgb_img.at<uint8_t>(color_idx + green_idx);
@@ -557,9 +558,9 @@ pointcloud_type* createXYZRGBPointCloud (const cv::Mat& depth_img,
 
   return cloud;
 }
-pointcloud_type* createXYZRGBPointCloud (const sensor_msgs::ImageConstPtr& depth_msg, 
+pointcloud_type* createXYZRGBPointCloud (const sensor_msgs::ImageConstPtr& depth_msg,
                                          const sensor_msgs::ImageConstPtr& rgb_msg,
-                                         const sensor_msgs::CameraInfoConstPtr& cam_info) 
+                                         const sensor_msgs::CameraInfoConstPtr& cam_info)
 {
   ScopedTimer s(__FUNCTION__);
   pointcloud_type* cloud (new pointcloud_type() );
@@ -638,8 +639,8 @@ pointcloud_type* createXYZRGBPointCloud (const sensor_msgs::ImageConstPtr& depth
   return cloud;
 }
 
-double errorFunction(const Eigen::Vector4f& x1, const double x1_depth_cov, 
-                     const Eigen::Vector4f& x2, const double x2_depth_cov, 
+double errorFunction(const Eigen::Vector4f& x1, const double x1_depth_cov,
+                     const Eigen::Vector4f& x2, const double x2_depth_cov,
                      const Eigen::Matrix4f& tf_1_to_2)
 {
   const double cam_angle_x = 58.0/180.0*M_PI;
@@ -653,7 +654,7 @@ double errorFunction(const Eigen::Vector4f& x1, const double x1_depth_cov,
 
   ROS_DEBUG_COND(x1(3) != 1.0, "4th element of x1 should be 1.0, is %f", x1(3));
   ROS_DEBUG_COND(x2(3) != 1.0, "4th element of x2 should be 1.0, is %f", x2(3));
-  
+
   Eigen::Vector3d mu_1 = x1.head<3>().cast<double>();
   Eigen::Vector3d mu_2 = x2.head<3>().cast<double>();
   Eigen::Matrix3d rotation_mat = tf_1_to_2.block(0,0,3,3).cast<double>();
@@ -669,11 +670,11 @@ double errorFunction(const Eigen::Vector4f& x1, const double x1_depth_cov,
   cov2(1,1) = raster_cov_y* mu_2(2); //how big is 1px std dev in meter, depends on depth
   cov2(2,2) = x2_depth_cov;
 
-  Eigen::Matrix3d cov2inv = cov2.inverse(); // Σ₂⁻¹  
+  Eigen::Matrix3d cov2inv = cov2.inverse(); // Σ₂⁻¹
 
-  Eigen::Vector3d mu_1_in_frame_2 = (tf_1_to_2 * x1).head<3>().cast<double>(); // μ₁⁽²⁾  = T₁₂ μ₁⁽¹⁾  
+  Eigen::Vector3d mu_1_in_frame_2 = (tf_1_to_2 * x1).head<3>().cast<double>(); // μ₁⁽²⁾  = T₁₂ μ₁⁽¹⁾
   Eigen::Matrix3d cov1_in_frame_2 = rotation_mat.transpose() * cov1 * rotation_mat;//Works since the cov is diagonal => Eig-Vec-Matrix is Identity
-  Eigen::Matrix3d cov1inv_in_frame_2 = cov1_in_frame_2.inverse();// Σ₁⁻¹  
+  Eigen::Matrix3d cov1inv_in_frame_2 = cov1_in_frame_2.inverse();// Σ₁⁻¹
 
   Eigen::Matrix3d cov_sum = (cov1inv_in_frame_2 + cov2inv);
   Eigen::Matrix3d inv_cov_sum = cov_sum.inverse();
@@ -683,8 +684,8 @@ double errorFunction(const Eigen::Vector4f& x1, const double x1_depth_cov,
   x_ml = inv_cov_sum * (cov1inv_in_frame_2 * mu_1_in_frame_2 + cov2inv * mu_2); // (Σ₁⁻¹ +  Σ₂⁻¹)⁻¹(Σ₁⁻¹μ₁  +  Σ₂⁻¹μ₂)
   Eigen::Vector3d delta_mu_1 = mu_1_in_frame_2 - x_ml;
   Eigen::Vector3d delta_mu_2 = mu_2 - x_ml;
-  
-  float sqrd_mahalanobis_distance1 = delta_mu_1.transpose() * cov1inv_in_frame_2 * delta_mu_1;// Δx_2^T Σ Δx_2 
+
+  float sqrd_mahalanobis_distance1 = delta_mu_1.transpose() * cov1inv_in_frame_2 * delta_mu_1;// Δx_2^T Σ Δx_2
   float sqrd_mahalanobis_distance2 = delta_mu_2.transpose() * cov2inv * delta_mu_2; // Δx_1^T Σ Δx_1
   float bad_mahalanobis_distance = sqrd_mahalanobis_distance1 + sqrd_mahalanobis_distance2; //FIXME
 
@@ -712,8 +713,8 @@ double errorFunction2(const Eigen::Vector4f& x1,
   static const double raster_cov_y = raster_stddev_y * raster_stddev_y;/*}}}*/
   static const bool use_error_shortcut = true;//ParameterServer::instance()->get<bool>("use_error_shortcut");
 
-  bool nan1 = isnan(x1(2));
-  bool nan2 = isnan(x2(2));
+  bool nan1 = std::isnan(x1(2));
+  bool nan2 = std::isnan(x2(2));
   if(nan1||nan2){
     //TODO: Handle Features with NaN, by reporting the reprojection error
     return std::numeric_limits<double>::max();
@@ -724,7 +725,7 @@ double errorFunction2(const Eigen::Vector4f& x1,
   Eigen::Matrix4d tf_12 = transformation;
   Eigen::Vector3d mu_1 = x_1.head<3>();
   Eigen::Vector3d mu_2 = x_2.head<3>();
-  Eigen::Vector3d mu_1_in_frame_2 = (tf_12 * x_1).head<3>(); // μ₁⁽²⁾  = T₁₂ μ₁⁽¹⁾  
+  Eigen::Vector3d mu_1_in_frame_2 = (tf_12 * x_1).head<3>(); // μ₁⁽²⁾  = T₁₂ μ₁⁽¹⁾
   //New Shortcut to determine clear outliers
   if(use_error_shortcut)
   {
@@ -735,7 +736,7 @@ double errorFunction2(const Eigen::Vector4f& x1,
     {
       return std::numeric_limits<double>::max();
     }
-  } 
+  }
 
   Eigen::Matrix3d rotation_mat = tf_12.block(0,0,3,3);
 
@@ -755,16 +756,16 @@ double errorFunction2(const Eigen::Vector4f& x1,
 
   // Δμ⁽²⁾ =  μ₁⁽²⁾ - μ₂⁽²⁾
   Eigen::Vector3d delta_mu_in_frame_2 = mu_1_in_frame_2 - mu_2;
-  if(isnan(delta_mu_in_frame_2(2))){
+  if(std::isnan(delta_mu_in_frame_2(2))){
     ROS_ERROR("Unexpected NaN");
     return std::numeric_limits<double>::max();
   }
   // Σc = (Σ₁ + Σ₂)
-  Eigen::Matrix3d cov_mat_sum_in_frame_2 = cov1_in_frame_2 + cov2;     
-  //ΔμT Σc⁻¹Δμ  
+  Eigen::Matrix3d cov_mat_sum_in_frame_2 = cov1_in_frame_2 + cov2;
+  //ΔμT Σc⁻¹Δμ
   //double sqrd_mahalanobis_distance = delta_mu_in_frame_2.transpose() * cov_mat_sum_in_frame_2.inverse() * delta_mu_in_frame_2;
   double sqrd_mahalanobis_distance = delta_mu_in_frame_2.transpose() *cov_mat_sum_in_frame_2.llt().solve(delta_mu_in_frame_2);
-  
+
   if(!(sqrd_mahalanobis_distance >= 0.0))
   {
     return std::numeric_limits<double>::max();
@@ -807,15 +808,15 @@ void observationLikelihood(const Eigen::Matrix4f& proposed_transformation,//new 
                              pointcloud_type::Ptr new_pc,
                              pointcloud_type::Ptr old_pc,
                              const sensor_msgs::CameraInfo& old_cam_info,
-                             double& likelihood, 
+                             double& likelihood,
                              double& confidence,
                              unsigned int& inliers,
                              unsigned int& outliers,
                              unsigned int& occluded,
-                             unsigned int& all) 
+                             unsigned int& all)
 {
   ScopedTimer s(__FUNCTION__);
- 
+
   int skip_step = ParameterServer::instance()->get<int>("emm__skip_step");
   const bool mark_outliers = ParameterServer::instance()->get<bool>("emm__mark_outliers");
   double observability_threshold = ParameterServer::instance()->get<double>("observability_threshold");
@@ -845,7 +846,7 @@ void observationLikelihood(const Eigen::Matrix4f& proposed_transformation,//new 
   ParameterServer* ps = ParameterServer::instance();
   float fx, fy, cx, cy;
   getCameraIntrinsics(fx, fy, cx, cy, old_cam_info);
-  int cloud_creation_skip_step = 1; 
+  int cloud_creation_skip_step = 1;
   if(ps->get<std::string>("topic_points").empty()){//downsampled cloud?
     cloud_creation_skip_step = ps->get<int>("cloud_creation_skip_step");
     fx = fx / cloud_creation_skip_step;
@@ -861,7 +862,7 @@ void observationLikelihood(const Eigen::Matrix4f& proposed_transformation,//new 
   uint8_t r2 = 128 + rand() % 128, g2 = rand() % 32,  b2 = 128+rand() % 128; // Mark bad points in magenta color
   uint32_t rgb2 = ((uint32_t)r2 << 16 | (uint32_t)g2 << 8 | (uint32_t)b2);
 
-//#pragma omp parallel for reduction(+: good_points, bad_points, occluded_points) 
+//#pragma omp parallel for reduction(+: good_points, bad_points, occluded_points)
   for(int new_ry = 0; new_ry < (int)new_pc->height; new_ry+=skip_step){
     for(int new_rx = 0; new_rx < (int)new_pc->width; new_rx+=skip_step, all++){
       //Backproject transformed new 3D point to 2d raster of old image
@@ -890,15 +891,15 @@ void observationLikelihood(const Eigen::Matrix4f& proposed_transformation,//new 
 
           const point_type& old_p = old_pc->at(old_rx, old_ry);
           if(old_p.z != old_p.z) continue; //NaN
-          
+
           // likelihood for old msrmnt = new msrmnt:
           double old_sigma = cloud_creation_skip_step*depth_covariance(old_p.z);
-          //TODO: (Wrong) Assumption: Transformation does not change the viewing angle. 
+          //TODO: (Wrong) Assumption: Transformation does not change the viewing angle.
           double new_sigma = cloud_creation_skip_step*depth_covariance(p.z);
           //Assumption: independence of sensor noise lets us sum variances
           double joint_sigma = old_sigma + new_sigma;
           ///TODO: Compute correctly transformed new sigma in old_z direction
-          
+
           //Cumulative of position: probability of being occluded
           double p_new_in_front = cdf(old_p.z, p.z, sqrt(joint_sigma));
           //ROS_INFO("Msrmnt. dz=%g MHD=%g sigma=%g obs_p=%g, behind_p=%g", dz, mahal_dist, sqrt(joint_sigma), observation_p, p_new_in_front);
@@ -965,10 +966,10 @@ void observationLikelihood(const Eigen::Matrix4f& proposed_transformation,//new 
  */
 double rejectionSignificance(const Eigen::Matrix4f& proposed_transformation,//new to old
                            pointcloud_type::Ptr new_pc,
-                           pointcloud_type::Ptr old_pc) 
+                           pointcloud_type::Ptr old_pc)
 {
    ScopedTimer s(__FUNCTION__);
- 
+
   int skip_step = ParameterServer::instance()->get<int>("emm__skip_step");
   bool mark_outliers = ParameterServer::instance()->get<bool>("emm__mark_outliers");
   double observability_threshold = ParameterServer::instance()->get<double>("observability_threshold");
@@ -990,14 +991,14 @@ double rejectionSignificance(const Eigen::Matrix4f& proposed_transformation,//ne
   //Camera Calibration FIXME: Get actual values
   float cx = old_pc->width /2 - 0.5;
   float cy = old_pc->height/2 - 0.5;
-  float fx = 521.0f / (640.0/old_pc->width); 
-  float fy = 521.0f / (480.0/old_pc->height); 
+  float fx = 521.0f / (640.0/old_pc->width);
+  float fy = 521.0f / (480.0/old_pc->height);
 
   double sum_mahalanobis_sq = 0.0;
   float observation_count = 0.0;
 
   unsigned int bad_points = 0, good_points = 0, occluded_points = 0;
-//#pragma omp parallel for reduction(+: good_points, bad_points, occluded_points) 
+//#pragma omp parallel for reduction(+: good_points, bad_points, occluded_points)
   for(int new_ry = 0; new_ry < (int)new_pc->height; new_ry+=skip_step){
     for(int new_rx = 0; new_rx < (int)new_pc->width; new_rx+=skip_step){
       //Backproject transformed new 3D point to 2d raster of old image
@@ -1024,11 +1025,11 @@ double rejectionSignificance(const Eigen::Matrix4f& proposed_transformation,//ne
       std::vector<double> depth_values_for_neighborhood;
       for(int old_ry = starty; old_ry < endy; old_ry+=neighbourhood_step){
         for(int old_rx = startx; old_rx < endx; old_rx+=neighbourhood_step){
-          
+
           const point_type& old_p = old_pc->at(old_rx, old_ry);
           if(old_p.z != old_p.z) continue; //NaN
           //ROS_INFO("Msrmnt. P1: (%f;%f;%f) P2: (%f;%f;%f)", p.x, p.y, p.z, old_p.x, old_p.y, old_p.z);
-          
+
           //Sensor model
           //New point (p) is projected to old point (old_p)
           double dz = (old_p.z - p.z);//Positive: p.z smaller than (in front of) old_p.z
@@ -1036,7 +1037,7 @@ double rejectionSignificance(const Eigen::Matrix4f& proposed_transformation,//ne
           double dz_sq = dz*dz;
           // likelihood for old msrmnt = new msrmnt:
           double old_cov = depth_covariance(old_p.z);
-          //TODO: (Wrong) Assumption: Transformation does not change the viewing angle. 
+          //TODO: (Wrong) Assumption: Transformation does not change the viewing angle.
           double new_cov = depth_covariance(p.z);
           //Assumption: independence of sensor noise lets us sum variances
           double joint_cov = old_cov + new_cov;
@@ -1170,4 +1171,3 @@ void overlay_edges(cv::Mat visual, cv::Mat depth, cv::Mat& visual_edges, cv::Mat
   cv::Canny(visual_edges, visual_edges, 25, 300);
   cv::Canny(depth, depth_edges, 10, 300);
 }
-

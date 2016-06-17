@@ -1069,8 +1069,8 @@ bool Node::getRelativeTransformationTo(const Node* earlier_node,
         matches_with_depth = new std::vector<cv::DMatch>(); //matches without depth can validate but not create the trafo
         matches_with_depth->reserve(initial_matches->size());
         BOOST_FOREACH (const cv::DMatch& m, *initial_matches) {
-            if (!isnan(this->feature_locations_3d_[m.queryIdx](2))
-                && !isnan(earlier_node->feature_locations_3d_[m.trainIdx](2)))
+            if (!std::isnan(this->feature_locations_3d_[m.queryIdx](2))
+                && !std::isnan(earlier_node->feature_locations_3d_[m.trainIdx](2)))
                 matches_with_depth->push_back(m);
         }
     }
