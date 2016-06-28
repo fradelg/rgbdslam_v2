@@ -8,18 +8,19 @@
  * All rights reserved.
  */
 
+#include <GL/gl.h>
+#include <QtConcurrent/qtconcurrentrun.h>
+#include <pcl_ros/impl/transforms.hpp>
+#include <pcl_ros/transforms.h>
 
 #include "ColorOctomapServer.h"
 #include "scoped_timer.h"
-#include <pcl_ros/transforms.h>
-#include <pcl_ros/impl/transforms.hpp>
-#include <GL/gl.h>
 
-ColorOctomapServer::ColorOctomapServer() : m_octoMap(0.05)
+ColorOctomapServer::ColorOctomapServer()
+    : m_octoMap(0.05)
 {
   reset();
 }
-
 
 ColorOctomapServer::~ColorOctomapServer() {}
 ///Clear octomap and reset values to paramters from parameter server
@@ -39,7 +40,7 @@ bool ColorOctomapServer::save(const char* filename) const
 {
   ScopedTimer s(__FUNCTION__);
   std::ofstream outfile(filename, std::ios_base::out | std::ios_base::binary);
-  if (outfile.is_open()){
+  if (outfile.is_open()) {
     //m_octoMap.writeConst(outfile);
     if (ParameterServer::instance()->get<bool>("concurrent_io")) {
       ROS_INFO("Waiting for rendering thread to finish");
@@ -50,15 +51,15 @@ bool ColorOctomapServer::save(const char* filename) const
     outfile.close();
     ROS_INFO("color tree written %s", filename);
     return true;
-  }
-  else {
+  } else {
     ROS_INFO("could not open  %s for writing", filename);
     return false;
   }
 }
 
 //Same as the other insertCloudCallback, but relies on the sensor position information in the cloud
-void ColorOctomapServer::insertCloudCallback(const pointcloud_type::ConstPtr cloud, double max_range) {
+void ColorOctomapServer::insertCloudCallback(const pointcloud_type::ConstPtr cloud, double max_range)
+{
 
   ScopedTimer s(__FUNCTION__);
 
@@ -77,23 +78,24 @@ void ColorOctomapServer::insertCloudCallback(const pointcloud_type::ConstPtr clo
 
   //Work
   octomapCloud->reserve(pcl_cloud->size());
-  for (pointcloud_type::const_iterator it = pcl_cloud->begin(); it != pcl_cloud->end(); ++it){
-    if (!std::isnan(it->z)) octomapCloud->push_back(it->x, it->y, it->z);
+  for (pointcloud_type::const_iterator it = pcl_cloud->begin(); it != pcl_cloud->end(); ++it) {
+    if (!std::isnan(it->z))
+      octomapCloud->push_back(it->x, it->y, it->z);
   }
 
   if (ParameterServer::instance()->get<bool>("concurrent_io")) {
     rendering.waitForFinished();
     rendering = QtConcurrent::run(this, &ColorOctomapServer::insertCloudCallbackCommon, octomapCloud, pcl_cloud, origin, max_range);
-  }
-  else {
+  } else {
     insertCloudCallbackCommon(octomapCloud, pcl_cloud, origin, max_range);
   }
 }
 
 void ColorOctomapServer::insertCloudCallbackCommon(boost::shared_ptr<octomap::Pointcloud> octomapCloud,
                                                    pointcloud_type::ConstPtr color_cloud,
-                                                   const octomap::point3d& origin, double max_range) {
-  if(m_octoMap.getResolution() != ParameterServer::instance()->get<double>("octomap_resolution")){
+                                                   const octomap::point3d& origin, double max_range)
+{
+  if (m_octoMap.getResolution() != ParameterServer::instance()->get<double>("octomap_resolution")) {
     ROS_WARN("OctoMap resolution changed from %f to %f. Resetting Octomap",
              m_octoMap.getResolution(), ParameterServer::instance()->get<double>("octomap_resolution"));
     this->reset();
@@ -131,8 +133,9 @@ void ColorOctomapServer::insertCloudCallbackCommon(boost::shared_ptr<octomap::Po
 //Filter, e.g. points in free space
 void ColorOctomapServer::occupancyFilter(pointcloud_type::ConstPtr input,
                                          pointcloud_type::Ptr output,
-                                         double occupancy_threshold){
-  if(output->points.capacity() < input->size()){ //cannot happen for input == output
+                                         double occupancy_threshold)
+{
+  if (output->points.capacity() < input->size()) { //cannot happen for input == output
     output->reserve(input->size());
   }
 
@@ -141,7 +144,7 @@ void ColorOctomapServer::occupancyFilter(pointcloud_type::ConstPtr input,
 
   size_t size = input->size();
   size_t outidx = 0;
-  for (size_t inidx = 0; inidx < size; ++inidx){
+  for (size_t inidx = 0; inidx < size; ++inidx) {
     const point_type& in_point = (*input)[inidx];
     Eigen::Vector3f in_vec = q * in_point.getVector3fMap() + t.head<3>();
     if (std::isnan(in_vec.z()))
@@ -155,15 +158,15 @@ void ColorOctomapServer::occupancyFilter(pointcloud_type::ConstPtr input,
     int z_a = m_octoMap.coordToKey(in_vec.z()) - radius;
     int z_b = m_octoMap.coordToKey(in_vec.z()) + radius;
     double sum_of_occupancy = 0, sum_of_weights = 0;
-    for(;x_a <= x_b; ++x_a){
-      for(;y_a <= y_b; ++y_a){
-        for(;z_a <= z_b; ++z_a){
+    for (; x_a <= x_b; ++x_a) {
+      for (; y_a <= y_b; ++y_a) {
+        for (; z_a <= z_b; ++z_a) {
           octomap::OcTreeNode* node = m_octoMap.search(octomap::OcTreeKey(x_a, y_a, z_a));
-          if(node != NULL){
+          if (node != NULL) {
             double dx = m_octoMap.keyToCoord(x_a) - in_vec.x();
             double dy = m_octoMap.keyToCoord(y_a) - in_vec.y();
             double dz = m_octoMap.keyToCoord(z_a) - in_vec.z();
-            double weight = dx*dx+dy*dy+dz*dz;
+            double weight = dx * dx + dy * dy + dz * dz;
             double weighted_occ = node->getOccupancy() / weight;
             sum_of_weights += weight;
             sum_of_occupancy += weighted_occ;
@@ -172,8 +175,7 @@ void ColorOctomapServer::occupancyFilter(pointcloud_type::ConstPtr input,
       }
     }
 
-
-    if(sum_of_occupancy < occupancy_threshold * sum_of_weights) //Filters points in non-existent nodes (outside of map?)
+    if (sum_of_occupancy < occupancy_threshold * sum_of_weights) //Filters points in non-existent nodes (outside of map?)
     //if(node != NULL && node->getOccupancy() >= occupancy_threshold)
     { //Valid point
       point_type& out_point = (*output)[outidx];
@@ -181,87 +183,88 @@ void ColorOctomapServer::occupancyFilter(pointcloud_type::ConstPtr input,
       ++outidx;
     }
   }
-  output->resize(outidx);//downsize
+  output->resize(outidx); //downsize
 }
 
-void ColorOctomapServer::render(){
+void ColorOctomapServer::render()
+{
   octomap::ColorOcTree::tree_iterator it = m_octoMap.begin_tree();
   octomap::ColorOcTree::tree_iterator end = m_octoMap.end_tree();
   int counter = 0;
   double occ_thresh = ParameterServer::instance()->get<double>("occupancy_filter_threshold");
   int level = ParameterServer::instance()->get<int>("octomap_display_level");
-  if(occ_thresh > 0) {
+  if (occ_thresh > 0) {
     glDisable(GL_LIGHTING);
-    glEnable (GL_BLEND);
+    glEnable(GL_BLEND);
     //glDisable(GL_CULL_FACE);
     glBegin(GL_TRIANGLES);
-    double stretch_factor = 128/(1 - occ_thresh); //occupancy range in which the displayed cubes can be
-    for(; it != end; ++counter, ++it){
-      if(level != it.getDepth()){
+    double stretch_factor = 128 / (1 - occ_thresh); //occupancy range in which the displayed cubes can be
+    for (; it != end; ++counter, ++it) {
+      if (level != it.getDepth()) {
         continue;
       }
       double occ = it->getOccupancy();
-      if(occ < occ_thresh){
+      if (occ < occ_thresh) {
         continue;
       }
-      glColor4ub(it->getColor().r, it->getColor().g, it->getColor().b, 128 /*basic visibility*/ + (occ - occ_thresh) * stretch_factor );
-      float halfsize = it.getSize()/2.0;
+      glColor4ub(it->getColor().r, it->getColor().g, it->getColor().b, 128 /*basic visibility*/ + (occ - occ_thresh) * stretch_factor);
+      float halfsize = it.getSize() / 2.0;
       float x = it.getX();
       float y = it.getY();
       float z = it.getZ();
       //Front
-      glVertex3f(x-halfsize,y-halfsize,z-halfsize);
-      glVertex3f(x-halfsize,y+halfsize,z-halfsize);
-      glVertex3f(x+halfsize,y+halfsize,z-halfsize);
+      glVertex3f(x - halfsize, y - halfsize, z - halfsize);
+      glVertex3f(x - halfsize, y + halfsize, z - halfsize);
+      glVertex3f(x + halfsize, y + halfsize, z - halfsize);
 
-      glVertex3f(x-halfsize,y-halfsize,z-halfsize);
-      glVertex3f(x+halfsize,y+halfsize,z-halfsize);
-      glVertex3f(x+halfsize,y-halfsize,z-halfsize);
+      glVertex3f(x - halfsize, y - halfsize, z - halfsize);
+      glVertex3f(x + halfsize, y + halfsize, z - halfsize);
+      glVertex3f(x + halfsize, y - halfsize, z - halfsize);
 
       //Back
-      glVertex3f(x-halfsize,y-halfsize,z+halfsize);
-      glVertex3f(x+halfsize,y-halfsize,z+halfsize);
-      glVertex3f(x+halfsize,y+halfsize,z+halfsize);
+      glVertex3f(x - halfsize, y - halfsize, z + halfsize);
+      glVertex3f(x + halfsize, y - halfsize, z + halfsize);
+      glVertex3f(x + halfsize, y + halfsize, z + halfsize);
 
-      glVertex3f(x-halfsize,y-halfsize,z+halfsize);
-      glVertex3f(x+halfsize,y+halfsize,z+halfsize);
-      glVertex3f(x-halfsize,y+halfsize,z+halfsize);
+      glVertex3f(x - halfsize, y - halfsize, z + halfsize);
+      glVertex3f(x + halfsize, y + halfsize, z + halfsize);
+      glVertex3f(x - halfsize, y + halfsize, z + halfsize);
 
       //Left
-      glVertex3f(x-halfsize,y-halfsize,z-halfsize);
-      glVertex3f(x-halfsize,y-halfsize,z+halfsize);
-      glVertex3f(x-halfsize,y+halfsize,z+halfsize);
+      glVertex3f(x - halfsize, y - halfsize, z - halfsize);
+      glVertex3f(x - halfsize, y - halfsize, z + halfsize);
+      glVertex3f(x - halfsize, y + halfsize, z + halfsize);
 
-      glVertex3f(x-halfsize,y-halfsize,z-halfsize);
-      glVertex3f(x-halfsize,y+halfsize,z+halfsize);
-      glVertex3f(x-halfsize,y+halfsize,z-halfsize);
+      glVertex3f(x - halfsize, y - halfsize, z - halfsize);
+      glVertex3f(x - halfsize, y + halfsize, z + halfsize);
+      glVertex3f(x - halfsize, y + halfsize, z - halfsize);
 
       //Right
-      glVertex3f(x+halfsize,y-halfsize,z-halfsize);
-      glVertex3f(x+halfsize,y+halfsize,z-halfsize);
-      glVertex3f(x+halfsize,y+halfsize,z+halfsize);
+      glVertex3f(x + halfsize, y - halfsize, z - halfsize);
+      glVertex3f(x + halfsize, y + halfsize, z - halfsize);
+      glVertex3f(x + halfsize, y + halfsize, z + halfsize);
 
-      glVertex3f(x+halfsize,y-halfsize,z-halfsize);
-      glVertex3f(x+halfsize,y+halfsize,z+halfsize);
-      glVertex3f(x+halfsize,y-halfsize,z+halfsize);
-
-      //?
-      glVertex3f(x-halfsize,y-halfsize,z-halfsize);
-      glVertex3f(x+halfsize,y-halfsize,z-halfsize);
-      glVertex3f(x+halfsize,y-halfsize,z+halfsize);
-
-      glVertex3f(x-halfsize,y-halfsize,z-halfsize);
-      glVertex3f(x+halfsize,y-halfsize,z+halfsize);
-      glVertex3f(x-halfsize,y-halfsize,z+halfsize);
+      glVertex3f(x + halfsize, y - halfsize, z - halfsize);
+      glVertex3f(x + halfsize, y + halfsize, z + halfsize);
+      glVertex3f(x + halfsize, y - halfsize, z + halfsize);
 
       //?
-      glVertex3f(x-halfsize,y+halfsize,z-halfsize);
-      glVertex3f(x-halfsize,y+halfsize,z+halfsize);
-      glVertex3f(x+halfsize,y+halfsize,z+halfsize);
+      glVertex3f(x - halfsize, y - halfsize, z - halfsize);
+      glVertex3f(x + halfsize, y - halfsize, z - halfsize);
+      glVertex3f(x + halfsize, y - halfsize, z + halfsize);
 
-      glVertex3f(x-halfsize,y+halfsize,z-halfsize);
-      glVertex3f(x+halfsize,y+halfsize,z+halfsize);
-      glVertex3f(x+halfsize,y+halfsize,z-halfsize);
+      glVertex3f(x - halfsize, y - halfsize, z - halfsize);
+      glVertex3f(x + halfsize, y - halfsize, z + halfsize);
+      glVertex3f(x - halfsize, y - halfsize, z + halfsize);
+
+      //?
+      glVertex3f(x - halfsize, y + halfsize, z - halfsize);
+      glVertex3f(x - halfsize, y + halfsize, z + halfsize);
+      glVertex3f(x + halfsize, y + halfsize, z + halfsize);
+
+      glVertex3f(x - halfsize, y + halfsize, z - halfsize);
+      glVertex3f(x + halfsize, y + halfsize, z + halfsize);
+      glVertex3f(x + halfsize, y + halfsize, z - halfsize);
     }
     glEnd();
   }

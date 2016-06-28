@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1)
 project(rgbdslam)
 
 set(USE_SIFT_GPU   OFF CACHE BOOLEAN "Compile with SIFT GPU support")
@@ -8,12 +8,6 @@ set(USE_GICP_CODE	 OFF CACHE BOOLEAN "Use the embedded GICP source")
 set(USE_PCL_ICP		 OFF CACHE BOOLEAN "Use the ICP algorithm from PCL")
 set(USE_GL2PS      OFF CACHE BOOLEAN "Prints 3D Window to PostScript - requires libgl2ps-dev")
 
-if ("${ROS_PARALLEL_JOBS}" EQUAL "")
-  set(ROS_PARALLEL_JOBS 1)
-endif ("${ROS_PARALLEL_JOBS}" EQUAL "")
-
-SET(CMAKE_CXX_FLAGS "-O3 -fPIC -std=c++0x")
-
 IF (${USE_GL2PS})
   add_definitions(-DGL2PS)
 ENDIF (${USE_GL2PS})
@@ -21,28 +15,40 @@ ENDIF (${USE_GL2PS})
 #is used for compiling the libraries
 set(USE_GICP 0)
 IF (${USE_GICP_BIN} OR ${USE_GICP_CODE})
-	set(USE_GICP 1)
+  set(USE_GICP 1)
 ENDIF (${USE_GICP_BIN} OR ${USE_GICP_CODE})
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules")
 
 # Find catkin macros and libraries
-find_package(catkin
-  REQUIRED COMPONENTS
-    pcl_conversions pcl_ros roscpp image_transport
-    cv_bridge sensor_msgs geometry_msgs visualization_msgs
-    std_msgs tf message_generation message_filters rosbag rosconsole
+find_package(catkin REQUIRED COMPONENTS
+  pcl_conversions
+  pcl_ros
+  roscpp
+  image_transport
+  cv_bridge
+  sensor_msgs
+  geometry_msgs
+  visualization_msgs
+  std_msgs
+  tf message_generation
+  message_filters
+  rosbag
 )
 
 # System dependencies are found with CMake's conventions
 find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common io)
 find_package(CSparse REQUIRED)
-find_package(Qt4 REQUIRED)
 find_package(G2O REQUIRED)
 find_package(OpenMP)
 find_package(Eigen3)
 find_package(Octomap)
+
+# Find the required Qt modules
+find_package(Qt5Widgets)
+find_package(Qt5OpenGL)
+find_package(Qt5Concurrent)
 
 add_service_files(
   DIRECTORY srv
@@ -68,12 +74,11 @@ link_directories(
 add_definitions(${PCL_DEFINITIONS})
 add_definitions(${EIGEN_DEFINITIONS})
 
-# Qt ########################
-# http://qtnode.net/wiki/Qt4_with_cmake
-SET(QT_USE_QTXML TRUE)
-SET(QT_USE_QTOPENGL TRUE)
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+# Instruct CMake to run moc automatically when needed.
+set(CMAKE_AUTOMOC ON)
 add_definitions(-DQT_NO_KEYWORDS)
-include(${QT_USE_FILE})
 
 # OpenMP ########################
 if (OPENMP_FOUND)
@@ -117,23 +122,23 @@ endif (${USE_SIFT_GPU})
 # GICP ######################
 #############################
 IF (${USE_GICP})
-	SET(gicp_build_path ${CMAKE_SOURCE_DIR}/external/gicp/ann_1.1.2)
+  SET(gicp_build_path ${CMAKE_SOURCE_DIR}/external/gicp/ann_1.1.2)
   FILE(MAKE_DIRECTORY ${gicp_build_path}/lib/)
   MESSAGE("\n------------------------------------------------------------------\n")
-	MESSAGE("Compiling GICP...")
-	EXECUTE_PROCESS(
-	    COMMAND make ${ROS_PARALLEL_JOBS} linux-g++
-	    WORKING_DIRECTORY ${gicp_build_path}
-	    RESULT_VARIABLE gicp_return
+  MESSAGE("Compiling GICP...")
+  EXECUTE_PROCESS(
+      COMMAND make ${ROS_PARALLEL_JOBS} linux-g++
+      WORKING_DIRECTORY ${gicp_build_path}
+      RESULT_VARIABLE gicp_return
     )
   MESSAGE("\n------------------------------------------------------------------\n")
 
-	#on error
-	IF (NOT ${gicp_return} EQUAL 0)
-		MESSAGE(FATAL_ERROR "GICP cannot be compiled. Returned: ${gicp_return}")
-	ENDIF (NOT ${gicp_return} EQUAL 0)
+  #on error
+  IF (NOT ${gicp_return} EQUAL 0)
+    MESSAGE(FATAL_ERROR "GICP cannot be compiled. Returned: ${gicp_return}")
+  ENDIF (NOT ${gicp_return} EQUAL 0)
 
-	FILE(COPY ${gicp_build_path}/lib/libANN.a DESTINATION ${CMAKE_SOURCE_DIR}/lib/)
+  FILE(COPY ${gicp_build_path}/lib/libANN.a DESTINATION ${CMAKE_SOURCE_DIR}/lib/)
 ENDIF (${USE_GICP})
 
 IF (${USE_GICP_BIN})
@@ -159,9 +164,9 @@ file(GLOB QT_FORMS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ui/*.ui)
 file(GLOB QT_RESOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} resources/*.qrc)
 file(GLOB_RECURSE QT_MOC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} FOLLOW_SYMLINKS include/local/*.hpp src/qtros.h src/openni_listener.h src/qt_gui.h src/graph_manager.h src/glviewer.h src/ros_service_ui.h)
 
-QT4_ADD_RESOURCES(QT_RESOURCES_CPP ${QT_RESOURCES})
-QT4_WRAP_UI(QT_FORMS_HPP ${QT_FORMS})
-QT4_WRAP_CPP(QT_MOC_HPP ${QT_MOC})
+qt5_add_resources(QT_RESOURCES_CPP ${QT_RESOURCES})
+qt5_wrap_ui(QT_FORMS_HPP ${QT_FORMS})
+#qt5_wrap_cpp(QT_MOC_HPP ${QT_MOC})
 
 ##############################################################################
 # Sources to Compile
@@ -218,13 +223,13 @@ add_dependencies(rgbdslam rgbdslam_gencpp)
 
 SET(LIBS_LINK GL GLU cholmod)
 IF (${USE_SIFT_GPU})
- 	SET(LIBS_LINK ${LIBS_LINK} siftgpu)
+  SET(LIBS_LINK ${LIBS_LINK} siftgpu)
 ENDIF (${USE_SIFT_GPU})
 IF (${USE_GL2PS})
   SET(LIBS_LINK ${LIBS_LINK} gl2ps)
 ENDIF (${USE_GL2PS})
 IF (${USE_GICP})
- 	SET(LIBS_LINK ${LIBS_LINK} gicp ANN gsl gslcblas)
+  SET(LIBS_LINK ${LIBS_LINK} gicp ANN gsl gslcblas)
 ENDIF (${USE_GICP})
 
 message(STATUS "${G2O_LIBRARIES}")
@@ -235,11 +240,12 @@ target_link_libraries(rgbdslam
   ${OCTOMAP_LIBRARIES}
   ${CSPARSE_LIBRARY}
   ${G2O_LIBRARIES}
-  ${QT_LIBRARIES}
-  ${QT_QTOPENGL_LIBRARY}
   ${GLUT_LIBRARY}
   ${OPENGL_LIBRARY}
   ${OpenCV_LIBS}
+  Qt5::Widgets
+  Qt5::OpenGL
+  Qt5::Concurrent
 )
 
 IF (${USE_GICP})
